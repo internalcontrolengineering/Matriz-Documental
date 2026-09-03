@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>📋 Matriz Documental — Sistema de Gestión Documental</title>
+    <title>📋 Matriz de Documentación Normativa Interna — Inventario del Sistema de Control Interno Normativo</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js">
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1615,18 +1615,18 @@
             <div class="header-left">
                 <img class="header-logo" src="https://raw.githubusercontent.com/internalcontrolengineering/Desarrollos/main/LogoCI-G.png" alt="Control Interno">
                 <div class="header-title-group">
-                    <h1>Matriz Documental</h1>
-                    <span class="header-subtitle">Listado Documental Institucional</span>
+                    <h1>Matriz de Documentación Normativa Interna</h1>
+                    <span class="header-subtitle">Inventario Maestro del Sistema de Control Interno Normativo</span>
                 </div>
             </div>
-            <div class="header-actions">
-                <div id="userBadge" class="user-badge-header"><i class="fas fa-user-circle"></i> <span id="userRoleLabel">—</span></div>
+            <div class="header-actions">                
                 <button class="btn btn-sm" onclick="toggleTheme()"><i class="fas fa-moon"></i> <span id="themeLabel">Oscuro</span></button>
                 <button class="btn btn-sm btn-success manager-only" onclick="exportData()"><i class="fas fa-download"></i> Exportar</button>
                 <button class="btn btn-sm btn-warning manager-only" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Importar</button>
                 <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
                 <button class="btn btn-sm btn-excel manager-only" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
                 <button class="btn btn-sm btn-danger manager-only" onclick="eliminarBD()"><i class="fas fa-database"></i> Eliminar BD</button>
+                <div id="userBadge" class="user-badge-header"><i class="fas fa-user-circle"></i> <span id="userRoleLabel">—</span></div>
                 <button class="logout-btn-header" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
             </div>
         </header>
@@ -1967,9 +1967,9 @@
 
         function showLogin() {
             const profiles = [
-                { id: 'stakeholder', title: 'Stakeholder', icon: 'fa-eye', description: 'Consulta de documentos.', badge: 'Solo lectura',
+                { id: 'stakeholder', title: 'Stakeholder', icon: 'fa-eye', description: 'Consulta de la Documentación Normativa Interna.', badge: 'Solo lectura',
                 color: '#16a34a' },
-                { id: 'manager', title: 'Control Interno', icon: 'fa-user-shield', description: 'Administración de la Matriz Documental.',
+                { id: 'manager', title: 'Control Interno', icon: 'fa-user-shield', description: 'Administración de la Documentación Normativa Interna.',
                     badge: 'Acceso total', color: '#2563eb' }
             ];
             let rotationAngle = 0;
@@ -1980,8 +1980,8 @@
                     <div class="carousel-container">
                         <div class="carousel-title">
                             <div class="carousel-logo"><img src="https://raw.githubusercontent.com/internalcontrolengineering/Desarrollos/main/LogoCI-BC.png" alt="Logo"></div>
-                            <h2>Matriz Documental</h2>
-                            <p>Sistema de Gestión Documental · Control Interno</p>
+                            <h2>Documentación Normativa Interna</h2>
+                            <p>Sistema de Control Interno Normativo</p>
                         </div>
                         <div class="carousel-3d" id="carousel3d">
                             ${profiles.map((p, idx) => `
@@ -2063,7 +2063,7 @@
                 modal.innerHTML = `
                     <div class="password-modal-content">
                         <h3><i class="fas fa-lock"></i> Acceso Control Interno</h3>
-                        <p>Ingresa la contraseña para acceder con control total</p>
+                        <p>Privilegio de acceso restringido exclusivamente al departamento de Control Interno.</p>
                         <input type="password" id="managerPassword" placeholder="Contraseña" autofocus autocomplete="current-password">
                         <div id="passError" class="error-msg-pass"></div>
                         <div class="password-modal-buttons">
@@ -3625,7 +3625,7 @@
         </div>
         <div style="width: 1px; height: 24px; background-color: #cbd5e1;"></div>
         <div style="display: flex; flex-direction: column; line-height: 1.2;">
-            <span style="font-size: 0.5rem; color: #0A2540;">Matriz Documental</span>
+            <span style="font-size: 0.5rem; color: #0A2540;">Matriz de Documentación Normativa Interna</span>
             <span style="font-size: 0.4rem; color: #94a3b8; font-weight: 500;">V1.0 | Septiembre 2026</span>
         </div>
     </div>
