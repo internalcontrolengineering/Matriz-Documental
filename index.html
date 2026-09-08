@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <title>📋 Matriz de Documentación Normativa Interna — Inventario del Sistema de Control Interno Normativo</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -1961,8 +1961,11 @@
         }
 
         function logout() {
-            if (confirm('¿Cerrar sesión?')) { clearSession();
-                location.reload(); }
+            if (confirm('¿Cerrar sesión?')) {
+                teardownRealtimeSync();
+                clearSession();
+                location.reload();
+            }
         }
 
         function showLogin() {
@@ -2035,7 +2038,7 @@
             setTimeout(updateActiveCard, 80);
             let isLoggingIn = false;
 
-            function performLogin(role, isManagerValue) {
+            async function performLogin(role, isManagerValue) {
                 isLoggingIn = true;
                 try {
                     saveSession(role, isManagerValue);
@@ -2046,8 +2049,9 @@
                     document.getElementById('loginOverlay')?.remove();
                     document.getElementById('appContainer').style.display = 'block';
                     applyViewOnlyMode();
-                    data = loadData();
+                    data = await loadData();
                     renderAll();
+                    setupRealtimeSync();   // ← sincronización en vivo
                 } catch (err) {
                     console.error(err);
                     isLoggingIn = false;
@@ -2133,7 +2137,7 @@
             });
         }
 
-        function initializeApp() {
+        async function initializeApp() {
             const session = getStoredSession();
             if (session) {
                 currentUser = session.role;
@@ -2141,16 +2145,21 @@
                 startSessionTimer(session.expiration);
                 document.getElementById('appContainer').style.display = 'block';
                 applyViewOnlyMode();
-                data = loadData();
+                data = await loadData();
                 renderAll();
+                setupRealtimeSync();   // ← sincronización en vivo
             } else {
                 showLogin();
             }
         }
 
         // ============================================================
-        // DATA LAYER
+        // DATA LAYER + SUPABASE (prioridad) + localStorage (respaldo)
         // ============================================================
+        const SUPABASE_URL = 'https://uuxkyeaqhtrtnsmskdlo.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1eGt5ZWFxaHRydG5zbXNrZGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5MDE3NDAsImV4cCI6MjEwNDQ3Nzc0MH0.L04WafNqAmM3AOYTlGQfTwt8_59o0A8DDYF0Ttt3mMM';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const STORAGE_KEY = 'matriz_documental_v38';
         let data = null;
 
@@ -2247,16 +2256,242 @@
 
         function getDefaultData() { return { documents: [], history: [], nextId: 1, historyNextId: 1 }; }
 
-        function loadData() {
-            try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const p = JSON.parse(raw); if (p.documents !==
-                        undefined) return p; } } catch (e) {}
-            const def = getDefaultData();
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(def));
-            return def;
+        // ---------- SUPABASE helpers ----------
+        async function loadFromSupabase() {
+            try {
+                const [docsRes, histRes, metaRes] = await Promise.all([
+                    supabaseClient.from('documents').select('*').order('id'),
+                    supabaseClient.from('history').select('*').order('id'),
+                    supabaseClient.from('meta').select('*')
+                ]);
+                if (docsRes.error) throw docsRes.error;
+                if (histRes.error) throw histRes.error;
+                if (metaRes.error) throw metaRes.error;
+
+                const documents = (docsRes.data || []).map(d => ({
+                    id: Number(d.id),
+                    unidad: d.unidad || '',
+                    nomenclatura: d.nomenclatura || '',
+                    nombre: d.nombre || '',
+                    macro: d.macro || '',
+                    area: d.area || '',
+                    departamento: d.departamento || '',
+                    tipo: d.tipo || '',
+                    categoria: d.categoria || '',
+                    clasificacion: d.clasificacion || '',
+                    version: Number(d.version) || 1,
+                    fechaEmision: d.fecha_emision || '',
+                    fechaActualizacion: d.fecha_actualizacion || '',
+                    fechaAutorizacion: d.fecha_autorizacion || '',
+                    fechaDifusion: d.fecha_difusion || '',
+                    hipervinculo: d.hipervinculo || '',
+                    comentarios: d.comentarios || '',
+                    status: d.status || 'Nuevo'
+                }));
+
+                const history = (histRes.data || []).map(h => ({
+                    id: Number(h.id),
+                    text: h.text,
+                    timestamp: Number(h.timestamp)
+                }));
+
+                let nextId = 1, historyNextId = 1;
+                (metaRes.data || []).forEach(m => {
+                    if (m.key === 'nextId') nextId = Number(m.value) || 1;
+                    if (m.key === 'historyNextId') historyNextId = Number(m.value) || 1;
+                });
+
+                return { documents, history, nextId, historyNextId };
+            } catch (err) {
+                console.warn('[Supabase] No disponible, usando localStorage:', err.message || err);
+                return null;
+            }
         }
 
-        function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
-            data = d; }
+        async function saveToSupabase(d) {
+            try {
+                // Borrar e insertar (simple y atómico para este caso de uso)
+                await supabaseClient.from('documents').delete().neq('id', -1);
+                await supabaseClient.from('history').delete().neq('id', -1);
+
+                if (d.documents && d.documents.length > 0) {
+                    const docsToInsert = d.documents.map(doc => ({
+                        id: doc.id,
+                        unidad: doc.unidad || '',
+                        nomenclatura: doc.nomenclatura || '',
+                        nombre: doc.nombre || '',
+                        macro: doc.macro || '',
+                        area: doc.area || '',
+                        departamento: doc.departamento || '',
+                        tipo: doc.tipo || '',
+                        categoria: doc.categoria || '',
+                        clasificacion: doc.clasificacion || '',
+                        version: doc.version || 1,
+                        fecha_emision: doc.fechaEmision || '',
+                        fecha_actualizacion: doc.fechaActualizacion || '',
+                        fecha_autorizacion: doc.fechaAutorizacion || '',
+                        fecha_difusion: doc.fechaDifusion || '',
+                        hipervinculo: doc.hipervinculo || '',
+                        comentarios: doc.comentarios || '',
+                        status: doc.status || 'Nuevo'
+                    }));
+                    const { error } = await supabaseClient.from('documents').insert(docsToInsert);
+                    if (error) throw error;
+                }
+
+                if (d.history && d.history.length > 0) {
+                    const histToInsert = d.history.map(h => ({
+                        id: h.id,
+                        text: h.text,
+                        timestamp: h.timestamp
+                    }));
+                    const { error } = await supabaseClient.from('history').insert(histToInsert);
+                    if (error) throw error;
+                }
+
+                await supabaseClient.from('meta').upsert([
+                    { key: 'nextId', value: d.nextId || 1 },
+                    { key: 'historyNextId', value: d.historyNextId || 1 }
+                ]);
+
+                return true;
+            } catch (err) {
+                console.error('[Supabase] Error al guardar:', err);
+                return false;
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const p = JSON.parse(raw);
+                    if (p.documents !== undefined) return p;
+                }
+            } catch (e) {}
+            return getDefaultData();
+        }
+
+        function saveToLocalStorage(d) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+            } catch (e) {
+                console.error('Error localStorage:', e);
+            }
+        }
+
+        // ---------- loadData / saveData con prioridad Supabase ----------
+        async function loadData() {
+            // 1. Intentar Supabase (prioridad)
+            const remote = await loadFromSupabase();
+            if (remote !== null) {
+                // Guardar también en localStorage como respaldo
+                saveToLocalStorage(remote);
+                return remote;
+            }
+
+            // 2. Fallback a localStorage
+            const local = loadFromLocalStorage();
+
+            // 3. Si hay datos locales y Supabase falló, intentar subirlos cuando sea posible
+            if ((local.documents && local.documents.length > 0) || (local.history && local.history.length > 0)) {
+                // No bloqueamos; se intentará en el próximo save
+                console.log('[Sync] Datos locales detectados. Se sincronizarán en el próximo guardado.');
+            }
+
+            return local;
+        }
+
+        async function saveData(d) {
+            data = d; // mantener referencia global
+
+            // 1. Prioridad: Supabase
+            const ok = await saveToSupabase(d);
+
+            // 2. Siempre guardar en localStorage (respaldo de emergencia)
+            saveToLocalStorage(d);
+
+            if (!ok) {
+                console.warn('[Sync] Guardado solo en localStorage (Supabase no disponible).');
+            }
+            return ok;
+        }
+
+        // ============================================================
+        // REALTIME SYNC (cambios se reflejan inmediatamente en todos los dispositivos)
+        // ============================================================
+        let realtimeChannel = null;
+        let isSyncingFromRealtime = false;
+        let lastSyncTimestamp = 0;
+
+        function setupRealtimeSync() {
+            // Evitar múltiples suscripciones
+            if (realtimeChannel) {
+                try { supabaseClient.removeChannel(realtimeChannel); } catch(e) {}
+                realtimeChannel = null;
+            }
+
+            realtimeChannel = supabaseClient
+                .channel('matriz-documental-sync')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'documents'
+                }, handleRealtimeChange)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'history'
+                }, handleRealtimeChange)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'meta'
+                }, handleRealtimeChange)
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('[Realtime] Conectado – sincronización en vivo activa');
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.warn('[Realtime] Error de canal. Se usará recarga manual.');
+                    } else if (status === 'TIMED_OUT') {
+                        console.warn('[Realtime] Timeout. Reintentando...');
+                    }
+                });
+        }
+
+        async function handleRealtimeChange(payload) {
+            // Evitar bucles y demasiadas recargas seguidas
+            const now = Date.now();
+            if (isSyncingFromRealtime || (now - lastSyncTimestamp < 800)) return;
+
+            isSyncingFromRealtime = true;
+            lastSyncTimestamp = now;
+
+            try {
+                console.log('[Realtime] Cambio detectado → actualizando datos...');
+                const remote = await loadFromSupabase();
+                if (remote) {
+                    data = remote;
+                    saveToLocalStorage(remote);
+                    renderAll();
+                    // Si estamos en el dashboard, forzar redibujo de gráficas
+                    if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+                        setTimeout(renderDashboard, 50);
+                    }
+                }
+            } catch (err) {
+                console.error('[Realtime] Error al sincronizar:', err);
+            } finally {
+                setTimeout(() => { isSyncingFromRealtime = false; }, 300);
+            }
+        }
+
+        function teardownRealtimeSync() {
+            if (realtimeChannel) {
+                try { supabaseClient.removeChannel(realtimeChannel); } catch(e) {}
+                realtimeChannel = null;
+            }
+        }
 
         // ============================================================
         // GLOBALES
