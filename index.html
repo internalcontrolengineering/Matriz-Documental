@@ -2699,6 +2699,8 @@
         }
 
         function isColumnHiddenForStakeholder(key) {
+            // Acciones siempre oculta para Stakeholders
+            if (key === 'acciones' && !isManager) return true;
             return !isManager && hiddenColumnsForStakeholder.includes(key);
         }
 
