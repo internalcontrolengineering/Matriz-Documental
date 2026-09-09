@@ -1639,26 +1639,52 @@
             color: var(--text-primary);
         }
 
-        /* Redimensionado de columnas */
+        /* Redimensionado de columnas (solo ancho) */
         .table-container th {
-            position: relative;
-            overflow: visible;
+            position: relative !important;
+            overflow: visible !important;
         }
         .col-resizer {
             position: absolute;
             top: 0;
-            right: 0;
-            width: 6px;
+            right: -4px;
+            width: 10px;
             height: 100%;
             cursor: col-resize;
             user-select: none;
-            z-index: 40;
+            -webkit-user-select: none;
+            touch-action: none;
+            z-index: 50;
             background: transparent;
         }
         .col-resizer:hover,
         .col-resizer.active {
             background: var(--blue);
-            opacity: 0.55;
+            opacity: 0.7;
+        }
+        /* Área de toque más amplia en móvil */
+        @media (max-width: 768px) {
+            .col-resizer {
+                width: 16px;
+                right: -6px;
+            }
+            .col-resizer::after {
+                content: '';
+                position: absolute;
+                top: 20%;
+                bottom: 20%;
+                left: 50%;
+                width: 3px;
+                transform: translateX(-50%);
+                background: var(--border-color);
+                border-radius: 2px;
+                opacity: 0.6;
+            }
+            .col-resizer:active::after,
+            .col-resizer.active::after {
+                background: var(--blue);
+                opacity: 1;
+            }
         }
         .table-container table {
             table-layout: fixed;
@@ -2737,7 +2763,7 @@
         }
 
         // ============================================================
-        // REDIMENSIONADO DE COLUMNAS Y ALTURA DE FILAS
+        // REDIMENSIONADO DE COLUMNAS (solo ancho)
         // ============================================================
         const COL_WIDTHS_KEY = 'matriz_col_widths_v1';
         let columnWidths = {};
@@ -2749,12 +2775,14 @@
                     const obj = JSON.parse(raw);
                     if (obj && typeof obj === 'object') return obj;
                 }
-            } catch(e) {}
+            } catch (e) {}
             return {};
         }
 
         function saveColumnWidths() {
-            localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(columnWidths));
+            try {
+                localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(columnWidths));
+            } catch (e) {}
         }
 
         function getColWidth(key) {
@@ -2779,11 +2807,8 @@
                 th.style.minWidth = w + 'px';
                 th.style.maxWidth = w + 'px';
             });
-            // Apply same widths to body cells via colgroup if present, or first row
-            const rows = table.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                const tds = row.querySelectorAll('td');
-                tds.forEach((td, idx) => {
+            table.querySelectorAll('tbody tr').forEach(row => {
+                Array.from(row.children).forEach((td, idx) => {
                     const col = COLUMNS[idx];
                     if (!col) return;
                     const w = getColWidth(col.key);
@@ -2800,32 +2825,32 @@
             const ths = table.querySelectorAll('thead th');
 
             ths.forEach((th, idx) => {
-                // remove old resizer if any
                 const old = th.querySelector('.col-resizer');
                 if (old) old.remove();
 
                 const col = COLUMNS[idx];
                 if (!col) return;
-                // No resizer on last sticky acciones if desired – still allow
+
+                th.style.position = 'relative';
+                th.style.overflow = 'visible';
+
                 const resizer = document.createElement('div');
                 resizer.className = 'col-resizer';
-                resizer.title = 'Arrastra para ajustar ancho';
+                resizer.title = 'Arrastra para ajustar el ancho de esta columna';
                 th.appendChild(resizer);
 
                 let startX = 0;
                 let startW = 0;
+                let dragging = false;
 
-                const onMouseMove = (e) => {
-                    const dx = e.clientX - startX;
-                    let newW = Math.max(36, startW + dx);
-                    newW = Math.min(400, newW);
+                const applyWidth = (clientX) => {
+                    const dx = clientX - startX;
+                    let newW = Math.max(36, Math.min(450, startW + dx));
                     columnWidths[col.key] = newW;
                     th.style.width = newW + 'px';
                     th.style.minWidth = newW + 'px';
                     th.style.maxWidth = newW + 'px';
-                    // update body cells of this column
-                    const rows = table.querySelectorAll('tbody tr');
-                    rows.forEach(row => {
+                    table.querySelectorAll('tbody tr').forEach(row => {
                         const td = row.children[idx];
                         if (td) {
                             td.style.width = newW + 'px';
@@ -2835,26 +2860,65 @@
                     });
                 };
 
-                const onMouseUp = () => {
+                const stopDrag = () => {
+                    if (!dragging) return;
+                    dragging = false;
                     resizer.classList.remove('active');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                    document.body.style.touchAction = '';
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                    document.removeEventListener('touchcancel', onTouchEnd);
                     saveColumnWidths();
                 };
 
+                const onMouseMove = (e) => {
+                    if (!dragging) return;
+                    applyWidth(e.clientX);
+                };
+                const onMouseUp = () => stopDrag();
+
+                const onTouchMove = (e) => {
+                    if (!dragging || !e.touches[0]) return;
+                    e.preventDefault();
+                    applyWidth(e.touches[0].clientX);
+                };
+                const onTouchEnd = () => stopDrag();
+
+                // PC / mouse
                 resizer.addEventListener('mousedown', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    dragging = true;
                     startX = e.clientX;
                     startW = th.getBoundingClientRect().width;
                     resizer.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
                     document.addEventListener('mousemove', onMouseMove);
                     document.addEventListener('mouseup', onMouseUp);
                 });
+
+                // Celular / tablet (touch)
+                resizer.addEventListener('touchstart', (e) => {
+                    if (!e.touches[0]) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dragging = true;
+                    startX = e.touches[0].clientX;
+                    startW = th.getBoundingClientRect().width;
+                    resizer.classList.add('active');
+                    document.body.style.userSelect = 'none';
+                    document.body.style.touchAction = 'none';
+                    document.addEventListener('touchmove', onTouchMove, { passive: false });
+                    document.addEventListener('touchend', onTouchEnd);
+                    document.addEventListener('touchcancel', onTouchEnd);
+                }, { passive: false });
             });
         }
-
-        // --- Altura individual por fila ---
 
         function initColumnResizeUI() {
             columnWidths = loadColumnWidths();
