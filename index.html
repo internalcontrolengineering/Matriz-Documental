@@ -1638,6 +1638,37 @@
             cursor: pointer;
             color: var(--text-primary);
         }
+
+        /* Redimensionado de columnas */
+        .table-container th {
+            position: relative;
+            overflow: visible;
+        }
+        .col-resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 6px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+            z-index: 40;
+            background: transparent;
+        }
+        .col-resizer:hover,
+        .col-resizer.active {
+            background: var(--blue);
+            opacity: 0.55;
+        }
+        .table-container table {
+            table-layout: fixed;
+        }
+        .table-container th,
+        .table-container td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -2199,6 +2230,7 @@
                 applyViewOnlyMode();
                 data = await loadData();
                 await initHiddenColumns();
+                initColumnResizeUI();
                 renderAll();
                 setupRealtimeSync();   // ← sincronización en vivo
             } else {
@@ -2704,6 +2736,130 @@
             return !isManager && hiddenColumnsForStakeholder.includes(key);
         }
 
+        // ============================================================
+        // REDIMENSIONADO DE COLUMNAS Y ALTURA DE FILAS
+        // ============================================================
+        const COL_WIDTHS_KEY = 'matriz_col_widths_v1';
+        let columnWidths = {};
+
+        function loadColumnWidths() {
+            try {
+                const raw = localStorage.getItem(COL_WIDTHS_KEY);
+                if (raw) {
+                    const obj = JSON.parse(raw);
+                    if (obj && typeof obj === 'object') return obj;
+                }
+            } catch(e) {}
+            return {};
+        }
+
+        function saveColumnWidths() {
+            localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(columnWidths));
+        }
+
+        function getColWidth(key) {
+            if (columnWidths[key]) return columnWidths[key];
+            if (key === 'id') return 40;
+            if (key === 'hipervinculo') return 55;
+            if (key === 'nombre') return 120;
+            if (key === 'acciones') return 55;
+            if (key === 'nomenclatura') return 90;
+            return 75;
+        }
+
+        function applyColumnWidths() {
+            const table = document.querySelector('#tableContainer table');
+            if (!table) return;
+            const ths = table.querySelectorAll('thead th');
+            ths.forEach((th, idx) => {
+                const col = COLUMNS[idx];
+                if (!col) return;
+                const w = getColWidth(col.key);
+                th.style.width = w + 'px';
+                th.style.minWidth = w + 'px';
+                th.style.maxWidth = w + 'px';
+            });
+            // Apply same widths to body cells via colgroup if present, or first row
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const tds = row.querySelectorAll('td');
+                tds.forEach((td, idx) => {
+                    const col = COLUMNS[idx];
+                    if (!col) return;
+                    const w = getColWidth(col.key);
+                    td.style.width = w + 'px';
+                    td.style.minWidth = w + 'px';
+                    td.style.maxWidth = w + 'px';
+                });
+            });
+        }
+
+        function attachColumnResizers() {
+            const table = document.querySelector('#tableContainer table');
+            if (!table) return;
+            const ths = table.querySelectorAll('thead th');
+
+            ths.forEach((th, idx) => {
+                // remove old resizer if any
+                const old = th.querySelector('.col-resizer');
+                if (old) old.remove();
+
+                const col = COLUMNS[idx];
+                if (!col) return;
+                // No resizer on last sticky acciones if desired – still allow
+                const resizer = document.createElement('div');
+                resizer.className = 'col-resizer';
+                resizer.title = 'Arrastra para ajustar ancho';
+                th.appendChild(resizer);
+
+                let startX = 0;
+                let startW = 0;
+
+                const onMouseMove = (e) => {
+                    const dx = e.clientX - startX;
+                    let newW = Math.max(36, startW + dx);
+                    newW = Math.min(400, newW);
+                    columnWidths[col.key] = newW;
+                    th.style.width = newW + 'px';
+                    th.style.minWidth = newW + 'px';
+                    th.style.maxWidth = newW + 'px';
+                    // update body cells of this column
+                    const rows = table.querySelectorAll('tbody tr');
+                    rows.forEach(row => {
+                        const td = row.children[idx];
+                        if (td) {
+                            td.style.width = newW + 'px';
+                            td.style.minWidth = newW + 'px';
+                            td.style.maxWidth = newW + 'px';
+                        }
+                    });
+                };
+
+                const onMouseUp = () => {
+                    resizer.classList.remove('active');
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    saveColumnWidths();
+                };
+
+                resizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startX = e.clientX;
+                    startW = th.getBoundingClientRect().width;
+                    resizer.classList.add('active');
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            });
+        }
+
+        // --- Altura individual por fila ---
+
+        function initColumnResizeUI() {
+            columnWidths = loadColumnWidths();
+        }
+
         function getDataWithGeneralFilters() {
             let filtered = [...data.documents];
             if (generalFilters.anio && generalFilters.anio.length > 0) {
@@ -3141,7 +3297,7 @@
             }
             const h = (key) => isColumnHiddenForStakeholder(key) ? 'col-hidden-stakeholder' : '';
             tbody.innerHTML = filtered.map(doc => `
-                <tr>
+                <tr data-doc-id="${doc.id}">
                     <td class="${h('id')}" style="font-size:9px;">${doc.id}</td>
                     <td class="${h('unidad')}" style="font-size:9px;">${doc.unidad}</td>
                     <td class="${h('nomenclatura')}" style="font-size:9px;font-family:monospace;">${doc.nomenclatura}</td>
@@ -3983,6 +4139,11 @@
         function renderAll() {
             renderTableHeaders();
             renderTable();
+            // Aplicar anchos y resizers después de pintar la tabla
+            requestAnimationFrame(() => {
+                applyColumnWidths();
+                attachColumnResizers();
+            });
             renderHistory();
             actualizarDashboardFilters();
             actualizarFiltrosGenerales();
