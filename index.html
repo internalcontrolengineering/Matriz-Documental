@@ -1695,6 +1695,105 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        /* Menú colapsable del encabezado */
+        .header-menu-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .header-menu-btn {
+            padding: 5px 10px;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+        }
+        .header-menu-btn:hover {
+            background: var(--filter-active-bg);
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+        .header-menu-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            min-width: 180px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 2000;
+            padding: 6px;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .header-menu-dropdown.open {
+            display: flex;
+        }
+        .header-menu-dropdown .btn {
+            width: 100%;
+            justify-content: flex-start;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 11px;
+        }
+        .header-menu-dropdown .menu-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 4px 0;
+        }
+        /* Gear / campos obligatorios */
+        .req-field-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .req-field-item:hover {
+            background: var(--filter-active-bg);
+        }
+        .req-field-item input {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--blue);
+            cursor: pointer;
+        }
+        .req-field-item label {
+            flex: 1;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .btn-gear {
+            background: #64748b;
+            color: white;
+            border-color: #64748b;
+        }
+        .btn-gear:hover {
+            background: #475569;
+        }
+        @media (max-width: 640px) {
+            .header-menu-dropdown {
+                right: 0;
+                left: auto;
+                min-width: 160px;
+            }
+            .header-actions {
+                gap: 4px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1707,15 +1806,23 @@
                     <span class="header-subtitle">Inventario Maestro del Sistema de Control Interno Normativo</span>
                 </div>
             </div>
-            <div class="header-actions">                
-                <button class="btn btn-sm" onclick="toggleTheme()"><i class="fas fa-moon"></i> <span id="themeLabel">Oscuro</span></button>
-                <button class="btn btn-sm btn-success manager-only" onclick="exportData()"><i class="fas fa-download"></i> Exportar</button>
-                <button class="btn btn-sm btn-warning manager-only" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Importar</button>
-                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-                <button class="btn btn-sm btn-excel manager-only" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
-                <button class="btn btn-sm btn-danger manager-only" onclick="eliminarBD()"><i class="fas fa-database"></i> Eliminar BD</button>
+            <div class="header-actions">
                 <div id="userBadge" class="user-badge-header"><i class="fas fa-user-circle"></i> <span id="userRoleLabel">—</span></div>
-                <button class="logout-btn-header" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
+                <div class="header-menu-wrap">
+                    <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleHeaderMenu(event)" title="Menú">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-menu-dropdown" id="headerMenuDropdown">
+                        <button class="btn btn-sm" onclick="toggleTheme(); closeHeaderMenu();"><i class="fas fa-moon"></i> <span id="themeLabel">Oscuro</span></button>
+                        <button class="btn btn-sm btn-success manager-only" onclick="exportData(); closeHeaderMenu();"><i class="fas fa-download"></i> Exportar</button>
+                        <button class="btn btn-sm btn-warning manager-only" onclick="document.getElementById('importFile').click(); closeHeaderMenu();"><i class="fas fa-upload"></i> Importar</button>
+                        <button class="btn btn-sm btn-excel manager-only" onclick="exportToExcel(); closeHeaderMenu();"><i class="fas fa-file-excel"></i> Excel</button>
+                        <button class="btn btn-sm btn-danger manager-only" onclick="eliminarBD(); closeHeaderMenu();"><i class="fas fa-database"></i> Eliminar BD</button>
+                        <div class="menu-divider"></div>
+                        <button class="btn btn-sm" style="color:var(--red);" onclick="logout(); closeHeaderMenu();"><i class="fas fa-sign-out-alt"></i> Salir</button>
+                    </div>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
             </div>
         </header>
 
@@ -1779,7 +1886,7 @@
                         </div>
                     </div>
                     <div class="grupo-filtro">
-                        <label><i class="fas fa-user-tie"></i> Depto</label>
+                        <label><i class="fas fa-user-tie"></i> Departamento</label>
                         <div class="gen-filter-wrap" style="position:relative;">
                             <button type="button" class="filter-select gen-filter-btn" id="btnFiltroDepartamento" data-gkey="departamento" onclick="toggleGenDropdown('departamento', event)">Todos</button>
                             <div class="filter-dropdown" id="dropdown-gen-departamento" style="display:none;">
@@ -1889,7 +1996,7 @@
         <div id="tab-batch" class="tab-content">
             <div class="card">
                 <div class="card-header"><h3><i class="fas fa-upload"></i> Carga masiva de documentos</h3><button class="btn btn-success" onclick="downloadTemplate()"><i class="fas fa-file-excel"></i> Descargar plantilla</button></div>
-                <div class="template-info"><i class="fas fa-info-circle" style="color:var(--blue);"></i> <strong>Instrucciones:</strong> Descarga la plantilla, completa los datos y sube el archivo. <strong>Los documentos con nomenclatura duplicada no serán cargados.</strong></div>
+                <div class="template-info"><i class="fas fa-info-circle" style="color:var(--blue);"></i> <strong>Instrucciones:</strong> Descarga la plantilla, completa los datos y sube el archivo. Los documentos con nomenclatura duplicada no serán cargados.</div>
                 <div class="batch-zone" id="batchZone" onclick="document.getElementById('batchFile').click()">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <h3>Arrastra o haz clic para subir tu archivo</h3>
@@ -1928,7 +2035,7 @@
                 <div><label>Clasificación <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mClasificacion" class="required-field" onchange="validateField(this)"></select><button class="btn-add" onclick="addNewOption('mClasificacion', 'Nueva Clasificación')">+</button></div></div>
                 <div><label>Versión <span style="color:var(--red);">*</span></label><input type="number" id="mVersion" value="" step="1" min="1" placeholder="1" class="required-field" oninput="validateField(this)"></div>
                 <div><label>Fecha de Emisión <span style="color:var(--red);">*</span></label><input type="date" id="mFechaEmision" class="required-field" onchange="validateField(this)"></div>
-                <div><label>Fecha de Actualización <span style="color:var(--red);">*</span></label><input type="date" id="mFechaActualizacion" class="required-field" onchange="validateField(this)"></div>
+                <div><label>Fecha de Última Actualización <span style="color:var(--red);">*</span></label><input type="date" id="mFechaActualizacion" class="required-field" onchange="validateField(this)"></div>
                 <div><label>Fecha de Autorización <span style="color:var(--red);">*</span></label><input type="date" id="mFechaAutorizacion" class="required-field" onchange="validateField(this)"></div>
                 <div><label>Fecha de difusión <span style="color:var(--red);">*</span></label><input type="date" id="mFechaDifusion" class="required-field" onchange="validateField(this)"></div>
                 <div><label>Hipervínculo <span style="color:var(--red);">*</span></label><input type="url" id="mHipervinculo" placeholder="https://ejemplo.com/doc.pdf" class="required-field" oninput="validateField(this)"></div>
@@ -1936,8 +2043,44 @@
                 <div><label>Estado <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mStatus" class="required-field" onchange="validateField(this)"></select><button class="btn-add" onclick="addNewOption('mStatus', 'Nuevo Estado')">+</button></div></div>
             </div>
             <div class="modal-actions">
+                <button class="btn btn-gear manager-only" onclick="openRequiredFieldsModal()" title="Configurar campos obligatorios"><i class="fas fa-cog"></i></button>
                 <button class="btn" onclick="closeModal()">Cancelar</button>
                 <button class="btn btn-primary" id="modalSaveBtn">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Campos obligatorios -->
+    <div class="modal-overlay" id="requiredFieldsModal">
+        <div class="modal" style="max-width:420px;">
+            <h2><i class="fas fa-cog"></i> Campos obligatorios</h2>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
+                Marca los campos que deben ser obligatorios al agregar o editar un documento.
+            </p>
+            <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="setAllRequiredFields(false)"><i class="fas fa-eraser"></i> Limpiar todo</button>
+                <button class="btn btn-sm" onclick="setAllRequiredFields(true)"><i class="fas fa-check-double"></i> Seleccionar todo</button>
+            </div>
+            <div id="requiredFieldsList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+            <div class="modal-actions" style="margin-top:14px;">
+                <button class="btn" onclick="closeRequiredFieldsModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveRequiredFieldsConfig()"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Contraseña para configurar campos obligatorios -->
+    <div class="modal-overlay" id="reqPasswordModal">
+        <div class="modal" style="max-width:340px;">
+            <h2><i class="fas fa-lock"></i> Contraseña requerida</h2>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
+                Ingresa la contraseña de Control Interno para modificar los campos obligatorios.
+            </p>
+            <input type="password" id="reqConfigPassword" placeholder="Contraseña" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:12px;outline:none;margin-bottom:8px;">
+            <div id="reqPassError" style="color:#dc2626;font-size:11px;min-height:16px;margin-bottom:6px;"></div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeReqPasswordModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmReqPassword()">Continuar</button>
             </div>
         </div>
     </div>
@@ -2256,6 +2399,7 @@
                 applyViewOnlyMode();
                 data = await loadData();
                 await initHiddenColumns();
+                await initRequiredFields();
                 initColumnResizeUI();
                 renderAll();
                 setupRealtimeSync();   // ← sincronización en vivo
@@ -2329,7 +2473,12 @@
 
         function validateAllFields() {
             let all = true;
-            document.querySelectorAll('.required-field').forEach(f => { if (!validateField(f)) all = false; });
+            // Solo validar campos marcados como obligatorios según config
+            ALL_FORM_FIELDS.forEach(f => {
+                if (!requiredFieldsConfig.includes(f.key)) return;
+                const el = document.getElementById(f.el);
+                if (el && !validateField(el)) all = false;
+            });
             return all;
         }
 
@@ -2348,20 +2497,23 @@
         }
 
         function validateDocument(doc, isEdit) {
-            const required = ['unidad', 'nomenclatura', 'nombre', 'macro', 'area', 'departamento', 'tipo', 'categoria',
-                'clasificacion', 'version', 'fechaEmision', 'fechaActualizacion', 'fechaAutorizacion', 'fechaDifusion',
-                'hipervinculo', 'status'
-            ];
             const labels = { unidad: 'Unidad', nomenclatura: 'Nomenclatura', nombre: 'Nombre', macro: 'Macroproceso',
                 area: 'Área', departamento: 'Departamento', tipo: 'Tipo', categoria: 'Categoría',
                 clasificacion: 'Clasificación', version: 'Versión', fechaEmision: 'Fecha Emisión',
                 fechaActualizacion: 'Fecha Actualización', fechaAutorizacion: 'Fecha Autorización',
                 fechaDifusion: 'Fecha Difusión', hipervinculo: 'Hipervínculo', status: 'Estado' };
-            for (const f of required) { if (!doc[f] || doc[f].toString().trim() === '') { alert(
-                        `⚠️ El campo "${labels[f]}" es obligatorio`); return false; } }
-            const dup = data.documents.some(d => d.nomenclatura === doc.nomenclatura && (isEdit ? d.id !== doc.id :
-            true));
-            if (dup) { alert(`⚠️ La nomenclatura "${doc.nomenclatura}" ya existe`); return false; }
+            // Solo exigir campos configurados como obligatorios
+            for (const f of requiredFieldsConfig) {
+                if (!doc[f] || doc[f].toString().trim() === '') {
+                    alert(`⚠️ El campo "${labels[f] || f}" es obligatorio`);
+                    return false;
+                }
+            }
+            // Nomenclatura siempre se valida por duplicado si tiene valor
+            if (doc.nomenclatura) {
+                const dup = data.documents.some(d => d.nomenclatura === doc.nomenclatura && (isEdit ? d.id !== doc.id : true));
+                if (dup) { alert(`⚠️ La nomenclatura "${doc.nomenclatura}" ya existe`); return false; }
+            }
             return true;
         }
 
@@ -2580,8 +2732,9 @@
 
             try {
                 console.log('[Realtime] Cambio detectado → actualizando datos...', payload?.table || '');
-                // Siempre recargar columnas ocultas (pueden haber cambiado en meta)
+                // Siempre recargar columnas ocultas y campos obligatorios (meta)
                 await initHiddenColumns();
+                await initRequiredFields();
 
                 const remote = await loadFromSupabase();
                 if (remote) {
@@ -2760,6 +2913,201 @@
             // Acciones siempre oculta para Stakeholders
             if (key === 'acciones' && !isManager) return true;
             return !isManager && hiddenColumnsForStakeholder.includes(key);
+        }
+
+        // ============================================================
+        // MENÚ COLAPSABLE DEL ENCABEZADO
+        // ============================================================
+        function toggleHeaderMenu(e) {
+            if (e) e.stopPropagation();
+            const dd = document.getElementById('headerMenuDropdown');
+            if (!dd) return;
+            dd.classList.toggle('open');
+        }
+        function closeHeaderMenu() {
+            const dd = document.getElementById('headerMenuDropdown');
+            if (dd) dd.classList.remove('open');
+        }
+        document.addEventListener('click', function(e) {
+            const wrap = document.querySelector('.header-menu-wrap');
+            if (wrap && !wrap.contains(e.target)) closeHeaderMenu();
+        });
+
+        // ============================================================
+        // CAMPOS OBLIGATORIOS (configurables)
+        // ============================================================
+        const REQ_FIELDS_KEY = 'matriz_required_fields_v1';
+        const ALL_FORM_FIELDS = [
+            { key: 'unidad', label: 'Unidad de Negocio', el: 'mUnidad' },
+            { key: 'nomenclatura', label: 'Nomenclatura', el: 'mNomenclatura' },
+            { key: 'nombre', label: 'Nombre', el: 'mNombre' },
+            { key: 'macro', label: 'Macroproceso', el: 'mMacro' },
+            { key: 'area', label: 'Área', el: 'mArea' },
+            { key: 'departamento', label: 'Departamento', el: 'mDepartamento' },
+            { key: 'tipo', label: 'Tipo de Documento', el: 'mTipo' },
+            { key: 'categoria', label: 'Categoría', el: 'mCategoria' },
+            { key: 'clasificacion', label: 'Clasificación', el: 'mClasificacion' },
+            { key: 'version', label: 'Versión', el: 'mVersion' },
+            { key: 'fechaEmision', label: 'Fecha de Emisión', el: 'mFechaEmision' },
+            { key: 'fechaActualizacion', label: 'Fecha de Última Actualización', el: 'mFechaActualizacion' },
+            { key: 'fechaAutorizacion', label: 'Fecha de Autorización', el: 'mFechaAutorizacion' },
+            { key: 'fechaDifusion', label: 'Fecha de difusión', el: 'mFechaDifusion' },
+            { key: 'hipervinculo', label: 'Hipervínculo', el: 'mHipervinculo' },
+            { key: 'status', label: 'Estado', el: 'mStatus' }
+        ];
+        // Por defecto todos obligatorios (comportamiento original)
+        let requiredFieldsConfig = ALL_FORM_FIELDS.map(f => f.key);
+
+        function loadRequiredFieldsLocal() {
+            try {
+                const raw = localStorage.getItem(REQ_FIELDS_KEY);
+                if (raw) {
+                    const arr = JSON.parse(raw);
+                    if (Array.isArray(arr)) return arr;
+                }
+            } catch(e) {}
+            return ALL_FORM_FIELDS.map(f => f.key);
+        }
+
+        function saveRequiredFieldsLocal(arr) {
+            localStorage.setItem(REQ_FIELDS_KEY, JSON.stringify(arr));
+        }
+
+        async function loadRequiredFieldsFromSupabase() {
+            try {
+                const { data: rows, error } = await supabaseClient.from('meta').select('*').eq('key', 'requiredFields');
+                if (error) throw error;
+                if (rows && rows.length > 0 && rows[0].value_text) {
+                    const arr = JSON.parse(rows[0].value_text);
+                    if (Array.isArray(arr)) return arr;
+                }
+            } catch(e) {
+                console.warn('[ReqFields] No se pudo cargar desde Supabase:', e.message || e);
+            }
+            return null;
+        }
+
+        async function saveRequiredFieldsToSupabase(arr) {
+            try {
+                const { error } = await supabaseClient.from('meta').upsert({
+                    key: 'requiredFields',
+                    value: Date.now(),
+                    value_text: JSON.stringify(arr)
+                });
+                if (error) {
+                    console.warn('[ReqFields] Guardado solo local:', error.message);
+                    return false;
+                }
+                return true;
+            } catch(e) {
+                console.warn('[ReqFields] Error Supabase:', e);
+                return false;
+            }
+        }
+
+        async function initRequiredFields() {
+            const remote = await loadRequiredFieldsFromSupabase();
+            if (remote !== null) {
+                requiredFieldsConfig = remote;
+                saveRequiredFieldsLocal(remote);
+            } else {
+                requiredFieldsConfig = loadRequiredFieldsLocal();
+            }
+            applyRequiredFieldMarkers();
+        }
+
+        function applyRequiredFieldMarkers() {
+            // Actualizar asteriscos * en labels del modal
+            ALL_FORM_FIELDS.forEach(f => {
+                const el = document.getElementById(f.el);
+                if (!el) return;
+                const wrap = el.closest('div');
+                if (!wrap) return;
+                const label = wrap.querySelector('label');
+                if (!label) return;
+                const isReq = requiredFieldsConfig.includes(f.key);
+                // Quitar * previos y volver a poner si aplica
+                let text = label.innerHTML.replace(/\s*<span[^>]*>\*<\/span>/g, '').replace(/\s*\*$/, '').trim();
+                // Also strip plain * at end of text content patterns
+                const baseLabel = f.label;
+                if (isReq) {
+                    label.innerHTML = baseLabel + ' <span style="color:var(--red);">*</span>';
+                    el.classList.add('required-field');
+                } else {
+                    label.innerHTML = baseLabel;
+                    el.classList.remove('required-field', 'valid', 'invalid');
+                }
+            });
+        }
+
+        function openRequiredFieldsModal() {
+            if (!isManager) return;
+            // Pedir contraseña primero
+            document.getElementById('reqConfigPassword').value = '';
+            document.getElementById('reqPassError').textContent = '';
+            document.getElementById('reqPasswordModal').classList.add('active');
+            setTimeout(() => document.getElementById('reqConfigPassword').focus(), 50);
+        }
+
+        function closeReqPasswordModal() {
+            document.getElementById('reqPasswordModal').classList.remove('active');
+        }
+
+        function confirmReqPassword() {
+            const pwd = document.getElementById('reqConfigPassword').value;
+            if (pwd === MANAGER_PASSWORD || pwd === 'ControlInterno2026') {
+                closeReqPasswordModal();
+                showRequiredFieldsConfig();
+            } else {
+                document.getElementById('reqPassError').textContent = 'Contraseña incorrecta';
+                document.getElementById('reqConfigPassword').value = '';
+                document.getElementById('reqConfigPassword').focus();
+            }
+        }
+
+        // Enter key on password
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.getElementById('reqPasswordModal')?.classList.contains('active')) {
+                e.preventDefault();
+                confirmReqPassword();
+            }
+        });
+
+        function showRequiredFieldsConfig() {
+            const list = document.getElementById('requiredFieldsList');
+            if (!list) return;
+            list.innerHTML = ALL_FORM_FIELDS.map(f => {
+                const checked = requiredFieldsConfig.includes(f.key) ? 'checked' : '';
+                return `<div class="req-field-item" onclick="this.querySelector('input').click()">
+                    <input type="checkbox" id="req_${f.key}" value="${f.key}" ${checked} onclick="event.stopPropagation()">
+                    <label for="req_${f.key}">${f.label}</label>
+                </div>`;
+            }).join('');
+            document.getElementById('requiredFieldsModal').classList.add('active');
+        }
+
+        function closeRequiredFieldsModal() {
+            document.getElementById('requiredFieldsModal').classList.remove('active');
+        }
+
+        function setAllRequiredFields(checked) {
+            document.querySelectorAll('#requiredFieldsList input[type="checkbox"]').forEach(cb => {
+                cb.checked = !!checked;
+            });
+        }
+
+        async function saveRequiredFieldsConfig() {
+            if (!isManager) return;
+            const selected = [];
+            document.querySelectorAll('#requiredFieldsList input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) selected.push(cb.value);
+            });
+            requiredFieldsConfig = selected;
+            saveRequiredFieldsLocal(selected);
+            await saveRequiredFieldsToSupabase(selected);
+            applyRequiredFieldMarkers();
+            closeRequiredFieldsModal();
+            alert('✅ Campos obligatorios actualizados.');
         }
 
         // ============================================================
@@ -3423,6 +3771,7 @@
             document.getElementById('modalSaveBtn').onclick = saveDocument;
             clearModalForm();
             populateModalSelects();
+            applyRequiredFieldMarkers();
             document.getElementById('docModal').classList.add('active'); }
 
         function openEditModal(id) {
@@ -3450,6 +3799,7 @@
             document.getElementById('mHipervinculo').value = doc.hipervinculo || '';
             document.getElementById('mComentarios').value = doc.comentarios || '';
             document.getElementById('mStatus').value = doc.status || '';
+            applyRequiredFieldMarkers();
             document.getElementById('docModal').classList.add('active');
             setTimeout(() => { document.querySelectorAll('.required-field').forEach(f => validateField(f)); }, 100);
         }
@@ -4224,6 +4574,8 @@
         document.getElementById('dashboardFiltroArea').addEventListener('change', renderDashboard);
         document.getElementById('docModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
         document.getElementById('columnVisibilityModal')?.addEventListener('click', function(e) { if (e.target === this) closeColumnVisibilityModal(); });
+        document.getElementById('requiredFieldsModal')?.addEventListener('click', function(e) { if (e.target === this) closeRequiredFieldsModal(); });
+        document.getElementById('reqPasswordModal')?.addEventListener('click', function(e) { if (e.target === this) closeReqPasswordModal(); });
 
         // ============================================================
         // INIT
