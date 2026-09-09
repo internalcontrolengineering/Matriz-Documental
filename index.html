@@ -1607,6 +1607,37 @@
                 grid-template-columns: 1fr 1fr;
             }
         }
+        /* Columnas ocultas para stakeholders */
+        body.view-only th.col-hidden-stakeholder,
+        body.view-only td.col-hidden-stakeholder {
+            display: none !important;
+        }
+        .col-visibility-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .col-visibility-item:hover {
+            background: var(--filter-active-bg);
+        }
+        .col-visibility-item input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--blue);
+            cursor: pointer;
+        }
+        .col-visibility-item label {
+            flex: 1;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
@@ -1721,6 +1752,7 @@
                     <div class="filtros-actions">
                         <button class="btn btn-sm" onclick="resetFiltrosGenerales()" title="Limpiar filtros generales"><i class="fas fa-undo-alt"></i></button>
                         <button class="btn btn-sm btn-warning" onclick="resetAllFilters()" title="Limpiar filtros de columnas"><i class="fas fa-filter"></i></button>
+                        <button class="btn btn-sm manager-only" id="btnColumnVisibility" onclick="openColumnVisibilityModal()" title="Ocultar columnas para Stakeholders" style="background:#64748b;color:white;border-color:#64748b;"><i class="fas fa-eye-slash"></i></button>
                     </div>
                 </div>
                 <div class="table-container" id="tableContainer">
@@ -1849,6 +1881,25 @@
             <div class="modal-actions">
                 <button class="btn" onclick="closeModal()">Cancelar</button>
                 <button class="btn btn-primary" id="modalSaveBtn">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Visibilidad de columnas para Stakeholders -->
+    <div class="modal-overlay" id="columnVisibilityModal">
+        <div class="modal" style="max-width:420px;">
+            <h2><i class="fas fa-eye-slash"></i> Columnas ocultas para Stakeholders</h2>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
+                Selecciona las columnas que <strong>NO</strong> deben verse cuando se inicia sesión con el perfil <em>Stakeholder</em>.
+            </p>
+            <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="setAllColumnVisibility(false)" title="Desmarcar todas"><i class="fas fa-eraser"></i> Limpiar todo</button>
+                <button class="btn btn-sm" onclick="setAllColumnVisibility(true)" title="Marcar todas"><i class="fas fa-check-double"></i> Seleccionar todo</button>
+            </div>
+            <div id="columnVisibilityList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+            <div class="modal-actions" style="margin-top:14px;">
+                <button class="btn" onclick="closeColumnVisibilityModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveColumnVisibility()"><i class="fas fa-save"></i> Guardar</button>
             </div>
         </div>
     </div>
@@ -2050,6 +2101,7 @@
                     document.getElementById('appContainer').style.display = 'block';
                     applyViewOnlyMode();
                     data = await loadData();
+                    await initHiddenColumns();
                     renderAll();
                     setupRealtimeSync();   // ← sincronización en vivo
                 } catch (err) {
@@ -2146,6 +2198,7 @@
                 document.getElementById('appContainer').style.display = 'block';
                 applyViewOnlyMode();
                 data = await loadData();
+                await initHiddenColumns();
                 renderAll();
                 setupRealtimeSync();   // ← sincronización en vivo
             } else {
@@ -2468,16 +2521,19 @@
             lastSyncTimestamp = now;
 
             try {
-                console.log('[Realtime] Cambio detectado → actualizando datos...');
+                console.log('[Realtime] Cambio detectado → actualizando datos...', payload?.table || '');
+                // Siempre recargar columnas ocultas (pueden haber cambiado en meta)
+                await initHiddenColumns();
+
                 const remote = await loadFromSupabase();
                 if (remote) {
                     data = remote;
                     saveToLocalStorage(remote);
-                    renderAll();
-                    // Si estamos en el dashboard, forzar redibujo de gráficas
-                    if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
-                        setTimeout(renderDashboard, 50);
-                    }
+                }
+                renderAll();
+                // Si estamos en el dashboard, forzar redibujo de gráficas
+                if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+                    setTimeout(renderDashboard, 50);
                 }
             } catch (err) {
                 console.error('[Realtime] Error al sincronizar:', err);
@@ -2529,6 +2585,122 @@
             { key: 'status', label: 'Estado' },
             { key: 'acciones', label: 'Acciones' }
         ];
+
+        // Columnas ocultas para el perfil Stakeholder (se sincroniza vía Supabase meta)
+        let hiddenColumnsForStakeholder = [];
+        const COL_VIS_STORAGE_KEY = 'matriz_hidden_columns_v1';
+
+        function loadHiddenColumnsLocal() {
+            try {
+                const raw = localStorage.getItem(COL_VIS_STORAGE_KEY);
+                if (raw) {
+                    const arr = JSON.parse(raw);
+                    if (Array.isArray(arr)) return arr;
+                }
+            } catch(e) {}
+            return [];
+        }
+
+        function saveHiddenColumnsLocal(arr) {
+            localStorage.setItem(COL_VIS_STORAGE_KEY, JSON.stringify(arr));
+        }
+
+        async function loadHiddenColumnsFromSupabase() {
+            try {
+                const { data: rows, error } = await supabaseClient.from('meta').select('*').eq('key', 'hiddenColumns');
+                if (error) throw error;
+                if (rows && rows.length > 0 && rows[0].value_text) {
+                    const arr = JSON.parse(rows[0].value_text);
+                    if (Array.isArray(arr)) return arr;
+                }
+            } catch(e) {
+                console.warn('[ColVis] No se pudo cargar desde Supabase:', e.message || e);
+            }
+            return null;
+        }
+
+        async function saveHiddenColumnsToSupabase(arr) {
+            try {
+                // value_text guarda el JSON; value se usa como contador/timestamp para forzar Realtime
+                const { error } = await supabaseClient.from('meta').upsert({
+                    key: 'hiddenColumns',
+                    value: Date.now(),
+                    value_text: JSON.stringify(arr)
+                });
+                if (error) {
+                    console.warn('[ColVis] Guardado solo local (meta.value_text no disponible):', error.message);
+                    return false;
+                }
+                return true;
+            } catch(e) {
+                console.warn('[ColVis] Error guardando en Supabase:', e);
+                return false;
+            }
+        }
+
+        async function initHiddenColumns() {
+            // 1. Intentar Supabase
+            const remote = await loadHiddenColumnsFromSupabase();
+            if (remote !== null) {
+                hiddenColumnsForStakeholder = remote;
+                saveHiddenColumnsLocal(remote);
+            } else {
+                // 2. Fallback local
+                hiddenColumnsForStakeholder = loadHiddenColumnsLocal();
+            }
+        }
+
+        function openColumnVisibilityModal() {
+            if (!isManager) return;
+            const list = document.getElementById('columnVisibilityList');
+            if (!list) return;
+
+            // Columnas que se pueden ocultar (excluir 'acciones' porque ya se oculta en view-only)
+            const hideable = COLUMNS.filter(c => c.key !== 'acciones');
+
+            list.innerHTML = hideable.map(col => {
+                const checked = hiddenColumnsForStakeholder.includes(col.key) ? 'checked' : '';
+                return `<div class="col-visibility-item" onclick="this.querySelector('input').click()">
+                    <input type="checkbox" id="colvis_${col.key}" value="${col.key}" ${checked} onclick="event.stopPropagation()">
+                    <label for="colvis_${col.key}">${col.label}</label>
+                </div>`;
+            }).join('');
+
+            document.getElementById('columnVisibilityModal').classList.add('active');
+        }
+
+        function setAllColumnVisibility(checked) {
+            const checkboxes = document.querySelectorAll('#columnVisibilityList input[type="checkbox"]');
+            checkboxes.forEach(cb => { cb.checked = !!checked; });
+        }
+
+        function closeColumnVisibilityModal() {
+            document.getElementById('columnVisibilityModal').classList.remove('active');
+        }
+
+        async function saveColumnVisibility() {
+            if (!isManager) return;
+            const checkboxes = document.querySelectorAll('#columnVisibilityList input[type="checkbox"]');
+            const selected = [];
+            checkboxes.forEach(cb => { if (cb.checked) selected.push(cb.value); });
+
+            hiddenColumnsForStakeholder = selected;
+            saveHiddenColumnsLocal(selected);
+            const ok = await saveHiddenColumnsToSupabase(selected);
+
+            closeColumnVisibilityModal();
+            renderAll(); // re-render local inmediato
+            if (ok) {
+                // El resto de dispositivos lo recibirán por Realtime (tabla meta)
+                console.log('[ColVis] Preferencia guardada y sincronizada.');
+            } else {
+                alert('⚠️ Guardado local. No se pudo sincronizar con Supabase (revisa la columna value_text en meta).');
+            }
+        }
+
+        function isColumnHiddenForStakeholder(key) {
+            return !isManager && hiddenColumnsForStakeholder.includes(key);
+        }
 
         function getDataWithGeneralFilters() {
             let filtered = [...data.documents];
@@ -2585,9 +2757,10 @@
 
             let html = '<tr>';
             COLUMNS.forEach(col => {
+                const hiddenClass = isColumnHiddenForStakeholder(col.key) ? 'col-hidden-stakeholder' : '';
                 if (col.key === 'acciones') {
                     html +=
-                        `<th style="text-align:center;min-width:50px;position:sticky;right:0;background:var(--header-bg);z-index:31;"><div class="th-content"><span class="th-label" style="font-size:9px;">${col.label}</span></div></th>`;
+                        `<th class="${hiddenClass}" style="text-align:center;min-width:50px;position:sticky;right:0;background:var(--header-bg);z-index:31;"><div class="th-content"><span class="th-label" style="font-size:9px;">${col.label}</span></div></th>`;
                     return;
                 }
                 const colWidth = col.key === 'hipervinculo' ? '50px' : (col.key === 'nombre' ? '100px' : (col
@@ -2599,7 +2772,7 @@
                 let label = col.label;
                 if (selectedValues.length > 0) { label += ` (${selectedValues.length})`; }
 
-                html += `<th style="min-width:${colWidth};background:var(--header-bg);padding:2px 3px;position:relative;">
+                html += `<th class="${hiddenClass}" style="min-width:${colWidth};background:var(--header-bg);padding:2px 3px;position:relative;">
                     <div class="th-content" style="gap:1px;">
                         <span class="th-label" style="font-size:9px;">${label}</span>
                         <div style="position:relative;">
@@ -2964,26 +3137,27 @@
                     `<tr><td colspan="19" class="empty-state"><i class="fas fa-inbox"></i><br>No hay documentos registrados</td></tr>`;
                 return;
             }
+            const h = (key) => isColumnHiddenForStakeholder(key) ? 'col-hidden-stakeholder' : '';
             tbody.innerHTML = filtered.map(doc => `
                 <tr>
-                    <td style="font-size:9px;">${doc.id}</td>
-                    <td style="font-size:9px;">${doc.unidad}</td>
-                    <td style="font-size:9px;font-family:monospace;">${doc.nomenclatura}</td>
-                    <td style="font-size:9px;">${doc.nombre}</td>
-                    <td style="font-size:9px;">${doc.macro}</td>
-                    <td style="font-size:9px;">${doc.area}</td>
-                    <td style="font-size:9px;">${doc.departamento}</td>
-                    <td style="font-size:9px;">${doc.tipo}</td>
-                    <td style="font-size:9px;">${doc.categoria}</td>
-                    <td style="font-size:9px;">${doc.clasificacion}</td>
-                    <td style="text-align:center;font-weight:600;font-size:9px;">${doc.version}</td>
-                    <td style="font-size:9px;">${doc.fechaEmision || '-'}</td>
-                    <td style="font-size:9px;">${doc.fechaActualizacion || '-'}</td>
-                    <td style="font-size:9px;">${doc.fechaAutorizacion || '-'}</td>
-                    <td style="font-size:9px;">${doc.fechaDifusion || '-'}</td>
-                    <td class="link-cell" style="font-size:9px;">${doc.hipervinculo ? `<a href="${doc.hipervinculo}" target="_blank" style="font-size:9px;"><i class="fas fa-link"></i> Ver</a>` : '-'}</td>
-                    <td style="font-size:9px;"><span class="status-badge" style="font-size:9px;">${doc.status}</span></td>
-                    <td style="position:sticky;right:0;background:var(--bg-secondary);z-index:10;">
+                    <td class="${h('id')}" style="font-size:9px;">${doc.id}</td>
+                    <td class="${h('unidad')}" style="font-size:9px;">${doc.unidad}</td>
+                    <td class="${h('nomenclatura')}" style="font-size:9px;font-family:monospace;">${doc.nomenclatura}</td>
+                    <td class="${h('nombre')}" style="font-size:9px;">${doc.nombre}</td>
+                    <td class="${h('macro')}" style="font-size:9px;">${doc.macro}</td>
+                    <td class="${h('area')}" style="font-size:9px;">${doc.area}</td>
+                    <td class="${h('departamento')}" style="font-size:9px;">${doc.departamento}</td>
+                    <td class="${h('tipo')}" style="font-size:9px;">${doc.tipo}</td>
+                    <td class="${h('categoria')}" style="font-size:9px;">${doc.categoria}</td>
+                    <td class="${h('clasificacion')}" style="font-size:9px;">${doc.clasificacion}</td>
+                    <td class="${h('version')}" style="text-align:center;font-weight:600;font-size:9px;">${doc.version}</td>
+                    <td class="${h('fechaEmision')}" style="font-size:9px;">${doc.fechaEmision || '-'}</td>
+                    <td class="${h('fechaActualizacion')}" style="font-size:9px;">${doc.fechaActualizacion || '-'}</td>
+                    <td class="${h('fechaAutorizacion')}" style="font-size:9px;">${doc.fechaAutorizacion || '-'}</td>
+                    <td class="${h('fechaDifusion')}" style="font-size:9px;">${doc.fechaDifusion || '-'}</td>
+                    <td class="link-cell ${h('hipervinculo')}" style="font-size:9px;">${doc.hipervinculo ? `<a href="${doc.hipervinculo}" target="_blank" style="font-size:9px;"><i class="fas fa-link"></i> Ver</a>` : '-'}</td>
+                    <td class="${h('status')}" style="font-size:9px;"><span class="status-badge" style="font-size:9px;">${doc.status}</span></td>
+                    <td class="${h('acciones')}" style="position:sticky;right:0;background:var(--bg-secondary);z-index:10;">
                         ${isManager ? `<div class="actions-cell">
                             <i class="fas fa-pen" onclick="openEditModal(${doc.id})" title="Editar" style="font-size:10px;"></i>
                             <i class="fas fa-trash" onclick="deleteDocument(${doc.id})" title="Eliminar" style="font-size:10px;"></i>
@@ -3822,6 +3996,7 @@
         document.getElementById('dashboardFiltroUnidad').addEventListener('change', renderDashboard);
         document.getElementById('dashboardFiltroArea').addEventListener('change', renderDashboard);
         document.getElementById('docModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+        document.getElementById('columnVisibilityModal')?.addEventListener('click', function(e) { if (e.target === this) closeColumnVisibilityModal(); });
 
         // ============================================================
         // INIT
