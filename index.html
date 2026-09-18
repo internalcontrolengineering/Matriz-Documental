@@ -1802,6 +1802,154 @@
                 gap: 4px;
             }
         }
+
+        /* ===== Confirmaciones y Toasts minimalistas ===== */
+        .ui-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            z-index: 6000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            transition: opacity 0.22s ease;
+        }
+        .ui-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+        .ui-dialog {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 340px;
+            padding: 22px 20px 18px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+            text-align: center;
+            transform: scale(0.92) translateY(8px);
+            opacity: 0;
+            transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.22s ease;
+        }
+        .ui-overlay.open .ui-dialog {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        .ui-dialog.closing {
+            transform: scale(0.94) translateY(6px);
+            opacity: 0;
+        }
+        .ui-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.25rem;
+            color: white;
+        }
+        .ui-icon.delete { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .ui-icon.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .ui-icon.save { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+        .ui-icon.success { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .ui-icon.info { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+        .ui-icon.logout { background: linear-gradient(135deg, #64748b, #475569); }
+        .ui-dialog h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 6px;
+        }
+        .ui-dialog p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            margin: 0 0 16px;
+        }
+        .ui-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .ui-actions .btn {
+            min-width: 90px;
+            padding: 8px 14px;
+            font-size: 11px;
+            border-radius: 10px;
+        }
+        .ui-actions .btn-ghost {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+        .ui-actions .btn-ghost:hover {
+            background: var(--filter-active-bg);
+            color: var(--text-primary);
+        }
+
+        /* Toast notifications */
+        #toastContainer {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 7000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            max-width: min(340px, calc(100vw - 24px));
+        }
+        .toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.25s ease;
+        }
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast.hide {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+        .toast .toast-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .toast.success .toast-icon { background: #22c55e; }
+        .toast.delete .toast-icon { background: #ef4444; }
+        .toast.warning .toast-icon { background: #f59e0b; }
+        .toast.info .toast-icon { background: #2563eb; }
+        .toast.save .toast-icon { background: #2563eb; }
+        .toast .toast-msg { flex: 1; line-height: 1.3; }
+        @media (max-width: 480px) {
+            #toastContainer { top: 10px; right: 10px; left: 10px; max-width: none; }
+            .ui-dialog { max-width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -2118,6 +2266,22 @@
         <span id="timerDisplay">10:00</span>
     </div>
 
+    <!-- Confirmación minimalista -->
+    <div class="ui-overlay" id="uiConfirmOverlay" role="dialog" aria-modal="true">
+        <div class="ui-dialog" id="uiConfirmDialog">
+            <div class="ui-icon" id="uiConfirmIcon"><i class="fas fa-question"></i></div>
+            <h3 id="uiConfirmTitle">Confirmar</h3>
+            <p id="uiConfirmMessage">¿Desea continuar?</p>
+            <div class="ui-actions">
+                <button type="button" class="btn btn-ghost" id="uiConfirmCancel">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="uiConfirmOk">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div id="toastContainer"></div>
+
     <script>
         // ============================================================
         // SESIÓN Y ROLES
@@ -2129,6 +2293,87 @@
         let currentUser = null;
         let sessionTimerInterval = null;
         let sessionExpirationTime = null;
+
+        // ============================================================
+        // UI MINIMALISTA: Confirmaciones + Toasts con animación
+        // ============================================================
+        const UI_ICON_MAP = {
+            delete: 'fa-trash-alt',
+            warning: 'fa-exclamation-triangle',
+            save: 'fa-save',
+            success: 'fa-check',
+            info: 'fa-info-circle',
+            logout: 'fa-sign-out-alt'
+        };
+        const UI_BTN_CLASS = {
+            delete: 'btn-danger',
+            warning: 'btn-warning',
+            save: 'btn-primary',
+            success: 'btn-success',
+            info: 'btn-primary',
+            logout: 'btn-danger'
+        };
+        let _confirmResolve = null;
+
+        function showToast(message, type = 'success', duration = 2800) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = UI_ICON_MAP[type] || UI_ICON_MAP.success;
+            toast.innerHTML = `<div class="toast-icon"><i class="fas ${icon}"></i></div><div class="toast-msg">${message}</div>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => toast.classList.add('show'));
+            });
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 320);
+            }, duration);
+        }
+
+        function showConfirm({ title = 'Confirmar', message = '¿Desea continuar?', type = 'info', confirmText = 'Confirmar', cancelText = 'Cancelar' } = {}) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('uiConfirmOverlay');
+                const dialog = document.getElementById('uiConfirmDialog');
+                const iconEl = document.getElementById('uiConfirmIcon');
+                const titleEl = document.getElementById('uiConfirmTitle');
+                const msgEl = document.getElementById('uiConfirmMessage');
+                const okBtn = document.getElementById('uiConfirmOk');
+                const cancelBtn = document.getElementById('uiConfirmCancel');
+                if (!overlay || !dialog) { resolve(false); return; }
+
+                _confirmResolve = resolve;
+                iconEl.className = `ui-icon ${type}`;
+                iconEl.innerHTML = `<i class="fas ${UI_ICON_MAP[type] || UI_ICON_MAP.info}"></i>`;
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+                okBtn.textContent = confirmText;
+                cancelBtn.textContent = cancelText;
+                okBtn.className = `btn ${UI_BTN_CLASS[type] || 'btn-primary'}`;
+                dialog.classList.remove('closing');
+                overlay.classList.add('open');
+
+                const close = (result) => {
+                    dialog.classList.add('closing');
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.classList.remove('open');
+                        overlay.style.opacity = '';
+                        dialog.classList.remove('closing');
+                        if (_confirmResolve) {
+                            _confirmResolve(result);
+                            _confirmResolve = null;
+                        }
+                    }, 200);
+                };
+
+                okBtn.onclick = () => close(true);
+                cancelBtn.onclick = () => close(false);
+                overlay.onclick = (e) => { if (e.target === overlay) close(false); };
+            });
+        }
 
         function saveSession(role, isManagerValue) {
             localStorage.setItem('matriz_session', JSON.stringify({
@@ -2182,9 +2427,9 @@
             if (remaining <= 0) {
                 timerDiv.style.display = 'none';
                 clearInterval(sessionTimerInterval);
-                alert('Su sesión ha expirado.');
+                showToast('Su sesión ha expirado', 'warning', 2000);
                 clearSession();
-                location.reload();
+                setTimeout(() => location.reload(), 600);
                 return;
             }
             const minutes = Math.floor(remaining / 60000);
@@ -2220,11 +2465,19 @@
             }
         }
 
-        function logout() {
-            if (confirm('¿Cerrar sesión?')) {
+        async function logout() {
+            const ok = await showConfirm({
+                title: 'Cerrar sesión',
+                message: '¿Desea salir del sistema?',
+                type: 'logout',
+                confirmText: 'Salir',
+                cancelText: 'Cancelar'
+            });
+            if (ok) {
                 teardownRealtimeSync();
                 clearSession();
-                location.reload();
+                showToast('Sesión cerrada', 'info', 1500);
+                setTimeout(() => location.reload(), 400);
             }
         }
 
@@ -2514,14 +2767,17 @@
             // Solo exigir campos configurados como obligatorios
             for (const f of requiredFieldsConfig) {
                 if (!doc[f] || doc[f].toString().trim() === '') {
-                    alert(`⚠️ El campo "${labels[f] || f}" es obligatorio`);
+                    showToast(`El campo "${labels[f] || f}" es obligatorio`, 'warning');
                     return false;
                 }
             }
             // Nomenclatura siempre se valida por duplicado si tiene valor
             if (doc.nomenclatura) {
                 const dup = data.documents.some(d => d.nomenclatura === doc.nomenclatura && (isEdit ? d.id !== doc.id : true));
-                if (dup) { alert(`⚠️ La nomenclatura "${doc.nomenclatura}" ya existe`); return false; }
+                if (dup) {
+                    showToast(`La nomenclatura "${doc.nomenclatura}" ya existe`, 'warning');
+                    return false;
+                }
             }
             return true;
         }
@@ -2904,17 +3160,27 @@
             const selected = [];
             checkboxes.forEach(cb => { if (cb.checked) selected.push(cb.value); });
 
+            const okConfirm = await showConfirm({
+                title: 'Guardar columnas ocultas',
+                message: selected.length === 0
+                    ? 'No hay columnas seleccionadas. Los Consultores verán todas las columnas. ¿Continuar?'
+                    : `Se ocultarán ${selected.length} columna(s) para el perfil Consultor. ¿Guardar cambios?`,
+                type: 'save',
+                confirmText: 'Guardar',
+                cancelText: 'Cancelar'
+            });
+            if (!okConfirm) return;
+
             hiddenColumnsForStakeholder = selected;
             saveHiddenColumnsLocal(selected);
             const ok = await saveHiddenColumnsToSupabase(selected);
 
             closeColumnVisibilityModal();
-            renderAll(); // re-render local inmediato
+            renderAll();
             if (ok) {
-                // El resto de dispositivos lo recibirán por Realtime (tabla meta)
-                console.log('[ColVis] Preferencia guardada y sincronizada.');
+                showToast('Columnas ocultas actualizadas', 'save');
             } else {
-                alert('⚠️ Guardado local. No se pudo sincronizar con Supabase (revisa la columna value_text en meta).');
+                showToast('Guardado local. No se pudo sincronizar con Supabase', 'warning');
             }
         }
 
@@ -3111,12 +3377,20 @@
             document.querySelectorAll('#requiredFieldsList input[type="checkbox"]').forEach(cb => {
                 if (cb.checked) selected.push(cb.value);
             });
+            const okConfirm = await showConfirm({
+                title: 'Campos obligatorios',
+                message: `Se marcarán ${selected.length} campo(s) como obligatorios. ¿Guardar configuración?`,
+                type: 'save',
+                confirmText: 'Guardar',
+                cancelText: 'Cancelar'
+            });
+            if (!okConfirm) return;
             requiredFieldsConfig = selected;
             saveRequiredFieldsLocal(selected);
             await saveRequiredFieldsToSupabase(selected);
             applyRequiredFieldMarkers();
             closeRequiredFieldsModal();
-            alert('✅ Campos obligatorios actualizados.');
+            showToast('Campos obligatorios actualizados', 'success');
         }
 
         // ============================================================
@@ -3738,7 +4012,7 @@
                     <td class="${h('fechaAutorizacion')}" style="font-size:9px;">${doc.fechaAutorizacion || '-'}</td>
                     <td class="${h('fechaDifusion')}" style="font-size:9px;">${doc.fechaDifusion || '-'}</td>
                     <td class="link-cell ${h('hipervinculo')}" style="font-size:9px;">${doc.hipervinculo ? `<a href="${doc.hipervinculo}" target="_blank" style="font-size:9px;"><i class="fas fa-link"></i> Ver</a>` : '-'}</td>
-                    <td class="${h('status')}" style="font-size:9px;"><span class="status-badge" style="font-size:9px;">${doc.status}</span></td>
+                    <td class="${h('status')}" style="font-size:9px;"><span class="status-badge ${doc.status}" style="font-size:9px;">${doc.status}</span></td>
                     <td class="${h('acciones')}" style="position:sticky;right:0;background:var(--bg-secondary);z-index:10;">
                         ${isManager ? `<div class="actions-cell">
                             <i class="fas fa-pen" onclick="openEditModal(${doc.id})" title="Editar" style="font-size:10px;"></i>
@@ -3763,15 +4037,37 @@
             `).join('');
         }
 
-        function deleteHistoryItem(id) { if (!isManager) return; if (!confirm('¿Eliminar este evento?')) return;
+        async function deleteHistoryItem(id) {
+            if (!isManager) return;
+            const ok = await showConfirm({
+                title: 'Eliminar evento',
+                message: '¿Eliminar este evento del historial?',
+                type: 'delete',
+                confirmText: 'Eliminar',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
             data.history = data.history.filter(i => i.id !== id);
             saveData(data);
-            renderHistory(); }
+            renderHistory();
+            showToast('Evento eliminado', 'delete');
+        }
 
-        function clearHistory() { if (!isManager) return; if (!confirm('¿Eliminar TODO el historial?')) return;
+        async function clearHistory() {
+            if (!isManager) return;
+            const ok = await showConfirm({
+                title: 'Vaciar historial',
+                message: '¿Eliminar TODO el historial de cambios? Esta acción no se puede deshacer.',
+                type: 'delete',
+                confirmText: 'Eliminar todo',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
             data.history = [];
             saveData(data);
-            renderHistory(); }
+            renderHistory();
+            showToast('Historial eliminado', 'delete');
+        }
 
         // ============================================================
         // CRUD
@@ -3816,9 +4112,12 @@
             setTimeout(() => { document.querySelectorAll('.required-field').forEach(f => validateField(f)); }, 100);
         }
 
-        function saveDocument() {
+        async function saveDocument() {
             if (!isManager) return;
-            if (!validateAllFields()) { alert('⚠️ Complete todos los campos obligatorios'); return; }
+            if (!validateAllFields()) {
+                showToast('Complete todos los campos obligatorios', 'warning');
+                return;
+            }
             const version = parseInt(document.getElementById('mVersion').value) || 1;
             const tipo = document.getElementById('mTipo').value.trim();
             const categoria = getCategoriaByTipo(tipo);
@@ -3843,40 +4142,79 @@
                 status: document.getElementById('mStatus').value.trim()
             };
             if (!validateDocument(doc, editingId !== null)) return;
-            ['fechaEmision', 'fechaActualizacion', 'fechaAutorizacion', 'fechaDifusion'].forEach(f => { if (doc[f]) { const p =
-                        doc[f].split('-');
-                    doc[f] = `${p[2]}/${p[1]}/${p[0]}`; } });
-            if (editingId !== null) {
+
+            const isEdit = editingId !== null;
+            const ok = await showConfirm({
+                title: isEdit ? 'Actualizar documento' : 'Guardar documento',
+                message: isEdit
+                    ? `¿Guardar cambios en "${doc.nomenclatura}"?`
+                    : `¿Agregar el documento "${doc.nomenclatura}"?`,
+                type: 'save',
+                confirmText: isEdit ? 'Actualizar' : 'Guardar',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
+
+            ['fechaEmision', 'fechaActualizacion', 'fechaAutorizacion', 'fechaDifusion'].forEach(f => {
+                if (doc[f]) {
+                    const p = doc[f].split('-');
+                    doc[f] = `${p[2]}/${p[1]}/${p[0]}`;
+                }
+            });
+            if (isEdit) {
                 const idx = data.documents.findIndex(d => d.id === editingId);
-                if (idx !== -1) { const old = data.documents[idx].status;
+                if (idx !== -1) {
                     Object.assign(data.documents[idx], doc);
-                    data.history.push({ id: data.historyNextId++,
-                        text: `✏️ ${doc.nomenclatura} (${doc.nombre}) actualizado`, timestamp: Date.now() }); }
+                    data.history.push({
+                        id: data.historyNextId++,
+                        text: `✏️ ${doc.nomenclatura} (${doc.nombre}) actualizado`,
+                        timestamp: Date.now()
+                    });
+                }
             } else {
                 const maxId = data.documents.reduce((max, d) => Math.max(max, d.id), 0);
                 doc.id = maxId + 1;
                 data.documents.push(doc);
-                data.history.push({ id: data.historyNextId++, text: `📄 ${doc.nomenclatura} (${doc.nombre}) creado`,
-                    timestamp: Date.now() });
+                data.history.push({
+                    id: data.historyNextId++,
+                    text: `📄 ${doc.nomenclatura} (${doc.nombre}) creado`,
+                    timestamp: Date.now()
+                });
             }
             reindexIds();
             saveData(data);
             renderAll();
             closeModal();
+            showToast(isEdit ? 'Documento actualizado' : 'Documento creado', 'success');
         }
 
         function reindexIds() { data.documents.sort((a, b) => a.id - b.id);
             data.documents.forEach((d, i) => d.id = i + 1);
             data.nextId = data.documents.length + 1; }
 
-        function deleteDocument(id) { if (!isManager) return; if (!confirm('¿Eliminar permanentemente?')) return; const doc =
-                data.documents.find(d => d.id === id); if (!doc) return;
+        async function deleteDocument(id) {
+            if (!isManager) return;
+            const doc = data.documents.find(d => d.id === id);
+            if (!doc) return;
+            const ok = await showConfirm({
+                title: 'Eliminar documento',
+                message: `¿Eliminar permanentemente "${doc.nomenclatura}" (${doc.nombre})?`,
+                type: 'delete',
+                confirmText: 'Eliminar',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
             data.documents = data.documents.filter(d => d.id !== id);
-            data.history.push({ id: data.historyNextId++, text: `❌ ${doc.nomenclatura} (${doc.nombre}) eliminado`,
-                timestamp: Date.now() });
+            data.history.push({
+                id: data.historyNextId++,
+                text: `❌ ${doc.nomenclatura} (${doc.nombre}) eliminado`,
+                timestamp: Date.now()
+            });
             reindexIds();
             saveData(data);
-            renderAll(); }
+            renderAll();
+            showToast('Documento eliminado', 'delete');
+        }
 
         function closeModal() { document.getElementById('docModal').classList.remove('active');
             editingId = null; }
@@ -3940,7 +4278,7 @@
             if (!val || val.trim() === '') return;
             const sel = document.getElementById(selectId);
             if (!sel) return;
-            if (Array.from(sel.options).some(o => o.value === val.trim())) { alert('⚠️ Ya existe'); return; }
+            if (Array.from(sel.options).some(o => o.value === val.trim())) { showToast('Ese valor ya existe', 'warning'); return; }
             const opt = document.createElement('option');
             opt.value = val.trim();
             opt.textContent = val.trim();
@@ -4191,7 +4529,7 @@
                 try {
                     const text = e.target.result;
                     const lines = text.split('\n').filter(l => l.trim() !== '');
-                    if (lines.length < 2) { alert('⚠️ Archivo vacío'); return; }
+                    if (lines.length < 2) { showToast('Archivo vacío', 'warning'); return; }
                     const headerVals = parseCSVLine(lines[0]);
                     const headers = headerVals.map(h => h.trim().replace(/^"|"$/g, '').replace(/^\uFEFF/, ''));
                     const expected = ['Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área',
@@ -4203,8 +4541,12 @@
                     headers.forEach((h, i) => { const clean = h.trim().toLowerCase();
                         expected.forEach((eh, idx) => { if (clean === eh.toLowerCase()) map[idx] = i; }); });
                     const required = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16];
-                    for (let idx of required) { if (map[idx] === undefined) { alert(
-                                `⚠️ No se encontró columna: "${expected[idx]}"`); return; } }
+                    for (let idx of required) {
+                        if (map[idx] === undefined) {
+                            showToast(`No se encontró columna: "${expected[idx]}"`, 'warning');
+                            return;
+                        }
+                    }
                     const existing = new Set(data.documents.map(d => d.nomenclatura));
                     batchData = [];
                     let duplicates = [];
@@ -4237,17 +4579,24 @@
                         };
                         batchData.push(doc);
                     }
-                    if (batchData.length === 0 && duplicates.length > 0) { alert(
-                            `⚠️ No hay documentos nuevos. ${duplicates.length} duplicados omitidos.`); return; }
-                    if (batchData.length === 0) { alert('⚠️ No hay datos válidos'); return; }
+                    if (batchData.length === 0 && duplicates.length > 0) {
+                        showToast(`No hay documentos nuevos. ${duplicates.length} duplicados omitidos`, 'warning');
+                        return;
+                    }
+                    if (batchData.length === 0) {
+                        showToast('No hay datos válidos', 'warning');
+                        return;
+                    }
                     const warn = document.getElementById('duplicateWarning');
                     if (duplicates.length > 0) { warn.style.display = 'block';
                         warn.innerHTML =
                             `<i class="fas fa-exclamation-triangle"></i> <strong>${duplicates.length} omitido(s)</strong> por duplicado: ${duplicates.join(', ')}`; } else
                         warn.style.display = 'none';
                     showBatchPreview(batchData);
-                } catch (err) { alert('⚠️ Error: ' + err.message);
-                    console.error(err); }
+                } catch (err) {
+                    showToast('Error: ' + err.message, 'warning');
+                    console.error(err);
+                }
             };
             reader.readAsText(file);
             event.target.value = '';
@@ -4271,44 +4620,59 @@
             document.getElementById('batchProgress').style.width = '0%';
         }
 
-        function confirmBatchUpload() {
+        async function confirmBatchUpload() {
             if (!isManager) return;
-            if (batchData.length === 0) { alert('No hay datos'); return; }
+            if (batchData.length === 0) {
+                showToast('No hay datos para cargar', 'warning');
+                return;
+            }
             for (const d of batchData) {
                 const req = ['unidad', 'nomenclatura', 'nombre', 'macro', 'area', 'departamento', 'tipo', 'categoria',
                     'clasificacion', 'version', 'status'
                 ];
-                for (const f of req) { if (!d[f] || d[f].toString().trim() === '') { alert(
-                            `⚠️ ${d.nomenclatura} tiene campos incompletos`); return; } }
+                for (const f of req) {
+                    if (!d[f] || d[f].toString().trim() === '') {
+                        showToast(`${d.nomenclatura} tiene campos incompletos`, 'warning');
+                        return;
+                    }
+                }
             }
+            const ok = await showConfirm({
+                title: 'Carga masiva',
+                message: `¿Cargar ${batchData.length} documento(s) a la matriz?`,
+                type: 'save',
+                confirmText: 'Cargar',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
+
             const progress = document.getElementById('batchProgress');
             let loaded = 0;
             const total = batchData.length;
             const maxId = data.documents.reduce((m, d) => Math.max(m, d.id), 0);
             let currId = maxId + 1;
-            batchData.forEach(doc => { doc.id = currId++;
+            batchData.forEach(doc => {
+                doc.id = currId++;
                 data.documents.push(doc);
-                data.history.push({ id: data.historyNextId++,
-                    text: `📄 ${doc.nomenclatura} (${doc.nombre}) creado desde carga masiva`, timestamp: Date
-                        .now() });
+                data.history.push({
+                    id: data.historyNextId++,
+                    text: `📄 ${doc.nomenclatura} (${doc.nombre}) creado desde carga masiva`,
+                    timestamp: Date.now()
+                });
                 loaded++;
-                progress.style.width = (loaded / total) * 100 + '%'; });
+                progress.style.width = (loaded / total) * 100 + '%';
+            });
             reindexIds();
             saveData(data);
             renderAll();
-            if (dashStatusChart) { dashStatusChart.destroy();
-                dashStatusChart = null; }
-            if (dashCategoriaChart) { dashCategoriaChart.destroy();
-                dashCategoriaChart = null; }
-            if (dashClasificacionChart) { dashClasificacionChart.destroy();
-                dashClasificacionChart = null; }
-            if (dashYearChart) { dashYearChart.destroy();
-                dashYearChart = null; }
-            if (dashTipoChart) { dashTipoChart.destroy();
-                dashTipoChart = null; }
+            if (dashStatusChart) { dashStatusChart.destroy(); dashStatusChart = null; }
+            if (dashCategoriaChart) { dashCategoriaChart.destroy(); dashCategoriaChart = null; }
+            if (dashClasificacionChart) { dashClasificacionChart.destroy(); dashClasificacionChart = null; }
+            if (dashYearChart) { dashYearChart.destroy(); dashYearChart = null; }
+            if (dashTipoChart) { dashTipoChart.destroy(); dashTipoChart = null; }
             actualizarDashboardFilters();
             setTimeout(renderDashboard, 50);
-            alert(`✅ ${total} documentos cargados`);
+            showToast(`${total} documentos cargados`, 'success');
             clearBatchPreview();
         }
 
@@ -4398,7 +4762,7 @@
         function exportToExcel() {
             if (!isManager) return;
             const f = getFilteredData();
-            if (f.length === 0) { alert('⚠️ No hay documentos para exportar'); return; }
+            if (f.length === 0) { showToast('No hay documentos para exportar', 'warning'); return; }
             
             const headers = ['ID', 'Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área', 'Departamento',
                 'Tipo de Documento', 'Categoría', 'Clasificación', 'Versión', 'Fecha de Emisión (1a versión)',
@@ -4448,46 +4812,60 @@
             guardarConDialogoAvanzado(csv, nombreArchivo, 'text/csv;charset=utf-8');
         }
 
-        function importData(e) { if (!isManager) return; const file = e.target.files[0]; if (!file) return; const reader =
-                new FileReader();
-            reader.onload = function(ev) { try { const imp = JSON.parse(ev.target.result); if (imp.documents !== undefined &&
-                        imp.history !== undefined) { data = imp;
+        function importData(e) {
+            if (!isManager) return;
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const imp = JSON.parse(ev.target.result);
+                    if (imp.documents !== undefined && imp.history !== undefined) {
+                        data = imp;
                         reindexIds();
                         saveData(data);
                         renderAll();
-                        alert('✅ Datos importados'); } else alert('⚠️ Formato inválido'); } catch (err) { alert(
-                        '⚠️ Error: ' + err.message); } };
+                        showToast('Datos importados correctamente', 'success');
+                    } else {
+                        showToast('Formato inválido', 'warning');
+                    }
+                } catch (err) {
+                    showToast('Error: ' + err.message, 'warning');
+                }
+            };
             reader.readAsText(file);
-            e.target.value = ''; }
+            e.target.value = '';
+        }
 
-        function eliminarBD() {
+        async function eliminarBD() {
             if (!isManager) return;
             const pwd = prompt(
                 '⚠️ Esta acción eliminará TODOS los registros de forma permanente.\n\nIngrese la contraseña para confirmar:'
-                );
+            );
             if (pwd === null) return;
             if (pwd !== MANAGER_PASSWORD && pwd !== 'Control Interno2026') {
-                alert('❌ Contraseña incorrecta. No se eliminó ningún registro.');
+                showToast('Contraseña incorrecta. No se eliminó ningún registro', 'delete');
                 return;
             }
-            if (!confirm('¿Está completamente seguro de eliminar toda la base de datos? Esta acción NO se puede deshacer.'))
-                return;
+            const ok = await showConfirm({
+                title: 'Eliminar base de datos',
+                message: '¿Está completamente seguro? Esta acción NO se puede deshacer y borrará todos los documentos e historial.',
+                type: 'delete',
+                confirmText: 'Eliminar todo',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
             data = getDefaultData();
             saveData(data);
             generalFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
             currentFilters = {};
-            if (dashStatusChart) { dashStatusChart.destroy();
-                dashStatusChart = null; }
-            if (dashCategoriaChart) { dashCategoriaChart.destroy();
-                dashCategoriaChart = null; }
-            if (dashClasificacionChart) { dashClasificacionChart.destroy();
-                dashClasificacionChart = null; }
-            if (dashYearChart) { dashYearChart.destroy();
-                dashYearChart = null; }
-            if (dashTipoChart) { dashTipoChart.destroy();
-                dashTipoChart = null; }
+            if (dashStatusChart) { dashStatusChart.destroy(); dashStatusChart = null; }
+            if (dashCategoriaChart) { dashCategoriaChart.destroy(); dashCategoriaChart = null; }
+            if (dashClasificacionChart) { dashClasificacionChart.destroy(); dashClasificacionChart = null; }
+            if (dashYearChart) { dashYearChart.destroy(); dashYearChart = null; }
+            if (dashTipoChart) { dashTipoChart.destroy(); dashTipoChart = null; }
             renderAll();
-            alert('✅ Base de datos eliminada correctamente.');
+            showToast('Base de datos eliminada', 'delete');
         }
 
         // ============================================================
