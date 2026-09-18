@@ -608,6 +608,10 @@
             background: #fee2e2;
             color: #991b1b;
         }
+        .status-badge.Pendiente {
+            background: #ffedd5;
+            color: #c2410c;
+        }
         [data-theme="dark"] .status-badge.Nuevo {
             background: #1e40af;
             color: #dbeafe;
@@ -623,6 +627,10 @@
         [data-theme="dark"] .status-badge.Eliminado {
             background: #991b1b;
             color: #fee2e2;
+        }
+        [data-theme="dark"] .status-badge.Pendiente {
+            background: #9a3412;
+            color: #ffedd5;
         }
         .actions-cell {
             display: flex;
@@ -1940,6 +1948,7 @@
                 <div class="stat-card"><div class="label">🆕 Nuevos</div><div class="value teal" id="dashNuevos">0</div></div>
                 <div class="stat-card"><div class="label">🔄 Actualizados</div><div class="value orange" id="dashActualizados">0</div></div>
                 <div class="stat-card"><div class="label">✅ Ratificados</div><div class="value green" id="dashRatificados">0</div></div>
+                <div class="stat-card"><div class="label">⏳ Pendientes</div><div class="value" style="color:var(--orange);" id="dashPendientes">0</div></div>
                 <div class="stat-card"><div class="label">❌ Eliminados</div><div class="value red" id="dashEliminados">0</div></div>
             </div>
             <div class="main-grid-3">
@@ -2422,7 +2431,7 @@
             'Hoja de Verificación', 'Instructivo de Llenado', 'Instrucción de Operación', 'Listado', 'Manual Técnico',
             'Plan', 'Política', 'Procedimiento', 'PyLG', 'Registro'
         ];
-        const CHART_COLORS = { estado: ['#6c8ebf', '#8fb5a8', '#d4a78c', '#b89bc7'], categoria: ['#8fb5d4', '#c7b88a',
+        const CHART_COLORS = { estado: ['#6c8ebf', '#8fb5a8', '#d4a78c', '#f97316', '#b89bc7'], categoria: ['#8fb5d4', '#c7b88a',
                 '#8cc7b8'
             ], clasificacion: ['#8fb5a8', '#d4c78a', '#b89bc7'], year: ['#6c8ebf', '#8fb5a8', '#d4a78c', '#b89bc7',
                 '#8fb5d4', '#c7b88a'
@@ -2431,7 +2440,7 @@
             ] };
         const CATEGORIAS = ['Estratégico', 'Operativo', 'Soporte'];
         const CLASIFICACIONES = ['Controlado', 'No Controlado', 'Confidencial'];
-        const ESTADOS = ['Nuevo', 'Actualizado', 'Ratificado', 'Eliminado'];
+        const ESTADOS = ['Nuevo', 'Actualizado', 'Ratificado', 'Pendiente', 'Eliminado'];
 
         function getCategoriaByTipo(tipo) {
             if (!tipo) return 'Soporte';
@@ -3992,18 +4001,20 @@
             const nuevos = f.filter(d => d.status === 'Nuevo').length;
             const actualizados = f.filter(d => d.status === 'Actualizado').length;
             const ratificados = f.filter(d => d.status === 'Ratificado').length;
+            const pendientes = f.filter(d => d.status === 'Pendiente').length;
             const eliminados = f.filter(d => d.status === 'Eliminado').length;
             document.getElementById('dashTotal').textContent = total;
             document.getElementById('dashNuevos').textContent = nuevos;
             document.getElementById('dashActualizados').textContent = actualizados;
             document.getElementById('dashRatificados').textContent = ratificados;
+            document.getElementById('dashPendientes').textContent = pendientes;
             document.getElementById('dashEliminados').textContent = eliminados;
 
             const sc = document.getElementById('dashStatusChart');
             if (sc) {
-                const labels = ['Nuevo', 'Actualizado', 'Ratificado', 'Eliminado'];
-                const data = [nuevos, actualizados, ratificados, eliminados];
-                if (dashStatusChart) { dashStatusChart.data.datasets[0].data = data;
+                const labels = ['Nuevo', 'Actualizado', 'Ratificado', 'Pendiente', 'Eliminado'];
+                const data = [nuevos, actualizados, ratificados, pendientes, eliminados];
+                if (dashStatusChart) { dashStatusChart.data.labels = labels; dashStatusChart.data.datasets[0].data = data;
                     dashStatusChart.update(); } else { dashStatusChart = new Chart(sc, { type: 'doughnut', data: { labels,
                             datasets: [{ data, backgroundColor: CHART_COLORS.estado, borderWidth: 2,
                                 borderColor: 'var(--bg-secondary)' }] }, options: { responsive: true,
