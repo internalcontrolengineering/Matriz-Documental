@@ -4881,10 +4881,10 @@
             ];
             let csv = '\uFEFF' + headers.join(',') + '\n';
             const example =
-                ['Corporativo', 'DOC-001', '"Solicitud, Elaboración y Difusión de Comunicados"', 'Gobierno Corporativo',
-                    'Recursos Humanos', 'Capacitación y Desarrollo Organizacional', 'Procedimiento', 'Estratégico',
-                    'Controlado', '1', '17/11/2020', '21/11/2025', '26/11/2025', '05/12/2025',
-                    'https://ejemplo.com/doc.pdf', 'Documento base', 'Nuevo'
+                ['COMA', 'CM-PLG-CONTCI-01', '"Manual de Control Interno',
+                    'Contraloría', 'Control Interno', 'PyLG', 'Estratégico',
+                    'Confidencial', '1', '01/01/2024', '01/01/2024', '01/01/2024', '01/01/2024',
+                    'https://sites.google.com/trabajo.gob.pe/intranet/pol%C3%ADticas/control-interno/qu%C3%A9-es-el-control-interno?pli=1&authuser=0', 'Documento de nueva creación', 'Nuevo'
                 ];
             csv += example.join(',') + '\n';
             const nombreArchivo = 'plantilla_matriz_documental.csv';
