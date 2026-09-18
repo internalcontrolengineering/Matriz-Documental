@@ -385,6 +385,16 @@
             position: relative;
             -webkit-overflow-scrolling: touch;
         }
+        .table-container.is-empty {
+            min-height: 160px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .table-container.is-empty table {
+            display: none; /* sin cabeceras forzadas cuando no hay datos */
+        }
         .table-container table {
             width: 100%;
             border-collapse: collapse;
@@ -1696,12 +1706,36 @@
         }
         .table-container table {
             table-layout: fixed;
+            width: 100%;
         }
         .table-container th,
         .table-container td {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+        /* Estado vacío: mensaje centrado (la tabla se oculta) */
+        .table-empty-overlay {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+            color: var(--text-secondary);
+            pointer-events: none;
+            padding: 24px 16px;
+            width: 100%;
+        }
+        .table-container.is-empty .table-empty-overlay {
+            display: flex;
+        }
+        .table-empty-overlay i {
+            font-size: 32px;
+            opacity: 0.28;
+        }
+        .table-empty-overlay span {
+            font-size: 13px;
+            font-weight: 500;
         }
 
         /* Menú colapsable del encabezado */
@@ -1805,7 +1839,7 @@
 
         /* ===== Confirmaciones y Toasts minimalistas ===== */
         .ui-overlay {
-            display: none;
+            display: flex;
             position: fixed;
             inset: 0;
             background: rgba(15, 23, 42, 0.45);
@@ -1815,11 +1849,14 @@
             justify-content: center;
             padding: 16px;
             opacity: 0;
-            transition: opacity 0.22s ease;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
         }
         .ui-overlay.open {
-            display: flex;
             opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
         }
         .ui-dialog {
             background: var(--bg-secondary);
@@ -2080,6 +2117,10 @@
                         <thead id="tableHead"></thead>
                         <tbody id="docTableBody"></tbody>
                     </table>
+                    <div class="table-empty-overlay" id="tableEmptyOverlay" aria-hidden="true">
+                        <i class="fas fa-inbox"></i>
+                        <span>No hay documentos registrados</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2342,7 +2383,17 @@
                 const msgEl = document.getElementById('uiConfirmMessage');
                 const okBtn = document.getElementById('uiConfirmOk');
                 const cancelBtn = document.getElementById('uiConfirmCancel');
-                if (!overlay || !dialog) { resolve(false); return; }
+                if (!overlay || !dialog || !okBtn || !cancelBtn) {
+                    // Fallback nativo si el modal no existe
+                    resolve(window.confirm(message || title));
+                    return;
+                }
+
+                // Cerrar cualquier confirmación previa pendiente
+                if (_confirmResolve) {
+                    try { _confirmResolve(false); } catch (e) {}
+                    _confirmResolve = null;
+                }
 
                 _confirmResolve = resolve;
                 iconEl.className = `ui-icon ${type}`;
@@ -2353,24 +2404,29 @@
                 cancelBtn.textContent = cancelText;
                 okBtn.className = `btn ${UI_BTN_CLASS[type] || 'btn-primary'}`;
                 dialog.classList.remove('closing');
+                overlay.style.opacity = '';
+                overlay.classList.remove('open');
+
+                // Forzar reflow para que la animación de entrada se vea
+                void overlay.offsetWidth;
                 overlay.classList.add('open');
 
                 const close = (result) => {
+                    if (!_confirmResolve) return;
+                    const done = _confirmResolve;
+                    _confirmResolve = null;
                     dialog.classList.add('closing');
                     overlay.style.opacity = '0';
                     setTimeout(() => {
                         overlay.classList.remove('open');
                         overlay.style.opacity = '';
                         dialog.classList.remove('closing');
-                        if (_confirmResolve) {
-                            _confirmResolve(result);
-                            _confirmResolve = null;
-                        }
+                        done(result);
                     }, 200);
                 };
 
-                okBtn.onclick = () => close(true);
-                cancelBtn.onclick = () => close(false);
+                okBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); close(true); };
+                cancelBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); close(false); };
                 overlay.onclick = (e) => { if (e.target === overlay) close(false); };
             });
         }
@@ -3428,16 +3484,26 @@
 
         function applyColumnWidths() {
             const table = document.querySelector('#tableContainer table');
+            const container = document.getElementById('tableContainer');
             if (!table) return;
+            const isEmpty = container && container.classList.contains('is-empty');
             const ths = table.querySelectorAll('thead th');
             ths.forEach((th, idx) => {
                 const col = COLUMNS[idx];
                 if (!col) return;
+                if (isEmpty) {
+                    // Sin datos: dejar que las columnas se repartan en el ancho del contenedor
+                    th.style.width = '';
+                    th.style.minWidth = '';
+                    th.style.maxWidth = '';
+                    return;
+                }
                 const w = getColWidth(col.key);
                 th.style.width = w + 'px';
                 th.style.minWidth = w + 'px';
                 th.style.maxWidth = w + 'px';
             });
+            if (isEmpty) return;
             table.querySelectorAll('tbody tr').forEach(row => {
                 Array.from(row.children).forEach((td, idx) => {
                     const col = COLUMNS[idx];
@@ -3613,7 +3679,7 @@
                 const hiddenClass = isColumnHiddenForStakeholder(col.key) ? 'col-hidden-stakeholder' : '';
                 if (col.key === 'acciones') {
                     html +=
-                        `<th class="${hiddenClass}" style="text-align:center;min-width:50px;position:sticky;right:0;background:var(--header-bg);z-index:31;"><div class="th-content"><span class="th-label" style="font-size:9px;">${col.label}</span></div></th>`;
+                        `<th class="${hiddenClass}" style="text-align:center;min-width:50px;background:var(--header-bg);"><div class="th-content"><span class="th-label" style="font-size:9px;">${col.label}</span></div></th>`;
                     return;
                 }
                 const colWidth = col.key === 'hipervinculo' ? '50px' : (col.key === 'nombre' ? '100px' : (col
@@ -3984,12 +4050,14 @@
             let filtered = getFilteredData();
             filtered.sort((a, b) => a.id - b.id);
             const tbody = document.getElementById('docTableBody');
+            const tableContainer = document.getElementById('tableContainer');
             if (!tbody) return;
             if (filtered.length === 0) {
-                tbody.innerHTML =
-                    `<tr><td colspan="19" class="empty-state"><i class="fas fa-inbox"></i><br>No hay documentos registrados</td></tr>`;
+                tbody.innerHTML = '';
+                if (tableContainer) tableContainer.classList.add('is-empty');
                 return;
             }
+            if (tableContainer) tableContainer.classList.remove('is-empty');
             const h = (key) => isColumnHiddenForStakeholder(key) ? 'col-hidden-stakeholder' : '';
             // ID visual correlativo según el orden de los documentos filtrados
             tbody.innerHTML = filtered.map((doc, index) => {
@@ -4013,10 +4081,10 @@
                     <td class="${h('fechaDifusion')}" style="font-size:9px;">${doc.fechaDifusion || '-'}</td>
                     <td class="link-cell ${h('hipervinculo')}" style="font-size:9px;">${doc.hipervinculo ? `<a href="${doc.hipervinculo}" target="_blank" style="font-size:9px;"><i class="fas fa-link"></i> Ver</a>` : '-'}</td>
                     <td class="${h('status')}" style="font-size:9px;"><span class="status-badge ${doc.status}" style="font-size:9px;">${doc.status}</span></td>
-                    <td class="${h('acciones')}" style="position:sticky;right:0;background:var(--bg-secondary);z-index:10;">
+                    <td class="${h('acciones')}" style="text-align:center;">
                         ${isManager ? `<div class="actions-cell">
                             <i class="fas fa-pen" onclick="openEditModal(${doc.id})" title="Editar" style="font-size:10px;"></i>
-                            <i class="fas fa-trash" onclick="deleteDocument(${doc.id})" title="Eliminar" style="font-size:10px;"></i>
+                            <i class="fas fa-trash" onclick="deleteDocument(${doc.id}, event)" title="Eliminar" style="font-size:10px;"></i>
                         </div>` : ''}
                     </td>
                 </tr>`;
@@ -4039,14 +4107,12 @@
 
         async function deleteHistoryItem(id) {
             if (!isManager) return;
-            const ok = await showConfirm({
+            const authorized = await requireDeleteAuth({
                 title: 'Eliminar evento',
                 message: '¿Eliminar este evento del historial?',
-                type: 'delete',
-                confirmText: 'Eliminar',
-                cancelText: 'Cancelar'
+                confirmText: 'Eliminar'
             });
-            if (!ok) return;
+            if (!authorized) return;
             data.history = data.history.filter(i => i.id !== id);
             saveData(data);
             renderHistory();
@@ -4055,14 +4121,12 @@
 
         async function clearHistory() {
             if (!isManager) return;
-            const ok = await showConfirm({
+            const authorized = await requireDeleteAuth({
                 title: 'Vaciar historial',
                 message: '¿Eliminar TODO el historial de cambios? Esta acción no se puede deshacer.',
-                type: 'delete',
-                confirmText: 'Eliminar todo',
-                cancelText: 'Cancelar'
+                confirmText: 'Eliminar todo'
             });
-            if (!ok) return;
+            if (!authorized) return;
             data.history = [];
             saveData(data);
             renderHistory();
@@ -4192,18 +4256,33 @@
             data.documents.forEach((d, i) => d.id = i + 1);
             data.nextId = data.documents.length + 1; }
 
-        async function deleteDocument(id) {
+        async function deleteDocument(id, evt) {
+            if (evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+            }
             if (!isManager) return;
             const doc = data.documents.find(d => d.id === id);
-            if (!doc) return;
-            const ok = await showConfirm({
+            if (!doc) {
+                showToast('Documento no encontrado', 'warning');
+                return;
+            }
+            const authorized = await requireDeleteAuth({
                 title: 'Eliminar documento',
                 message: `¿Eliminar permanentemente "${doc.nomenclatura}" (${doc.nombre})?`,
-                type: 'delete',
-                confirmText: 'Eliminar',
-                cancelText: 'Cancelar'
+                confirmText: 'Eliminar'
             });
-            if (!ok) return;
+            if (!authorized) return;
+
+            // Animación de salida en la fila
+            const row = document.querySelector(`tr[data-doc-id="${id}"]`);
+            if (row) {
+                row.style.transition = 'opacity 0.28s ease, transform 0.28s ease, max-height 0.28s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(24px)';
+                await new Promise(r => setTimeout(r, 280));
+            }
+
             data.documents = data.documents.filter(d => d.id !== id);
             data.history.push({
                 id: data.historyNextId++,
@@ -4856,6 +4935,9 @@
                 cancelBtn.textContent = 'Cancelar';
                 okBtn.className = `btn ${UI_BTN_CLASS[type] || 'btn-danger'}`;
                 dialog.classList.remove('closing');
+                overlay.style.opacity = '';
+                overlay.classList.remove('open');
+                void overlay.offsetWidth;
                 overlay.classList.add('open');
 
                 const close = (result) => {
@@ -4876,8 +4958,8 @@
                     close(val);
                 };
 
-                okBtn.onclick = tryConfirm;
-                cancelBtn.onclick = () => close(null);
+                okBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); tryConfirm(); };
+                cancelBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); close(null); };
                 overlay.onclick = (e) => { if (e.target === overlay) close(null); };
                 setTimeout(() => {
                     const input = document.getElementById('uiPwdInput');
@@ -4891,31 +4973,40 @@
             });
         }
 
-        async function eliminarBD() {
-            if (!isManager) return;
-
-            // Paso 1: confirmación minimalista
+        /** Confirmación + contraseña obligatoria para cualquier eliminación */
+        async function requireDeleteAuth({ title, message, confirmText = 'Eliminar' } = {}) {
             const ok = await showConfirm({
-                title: 'Eliminar base de datos',
-                message: 'Esta acción borrará TODOS los documentos e historial de forma permanente. ¿Desea continuar?',
+                title: title || 'Eliminar',
+                message: message || '¿Desea eliminar este elemento?',
                 type: 'delete',
                 confirmText: 'Continuar',
                 cancelText: 'Cancelar'
             });
-            if (!ok) return;
+            if (!ok) return false;
 
-            // Paso 2: contraseña en diálogo minimalista
             const pwd = await showPasswordConfirm({
                 title: 'Contraseña requerida',
                 message: 'Ingrese la contraseña de Control Interno para confirmar la eliminación.',
                 type: 'delete',
+                confirmText: confirmText
+            });
+            if (pwd === null) return false;
+            if (pwd !== MANAGER_PASSWORD) {
+                showToast('Contraseña incorrecta. No se eliminó nada', 'delete');
+                return false;
+            }
+            return true;
+        }
+
+        async function eliminarBD() {
+            if (!isManager) return;
+
+            const authorized = await requireDeleteAuth({
+                title: 'Eliminar base de datos',
+                message: 'Esta acción borrará TODOS los documentos e historial de forma permanente. ¿Desea continuar?',
                 confirmText: 'Eliminar todo'
             });
-            if (pwd === null) return;
-            if (pwd !== MANAGER_PASSWORD && pwd !== 'ControlInterno2026') {
-                showToast('Contraseña incorrecta. No se eliminó ningún registro', 'delete');
-                return;
-            }
+            if (!authorized) return;
 
             data = getDefaultData();
             saveData(data);
