@@ -4837,24 +4837,86 @@
             e.target.value = '';
         }
 
+        function showPasswordConfirm({ title, message, type = 'delete', confirmText = 'Confirmar' } = {}) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('uiConfirmOverlay');
+                const dialog = document.getElementById('uiConfirmDialog');
+                const iconEl = document.getElementById('uiConfirmIcon');
+                const titleEl = document.getElementById('uiConfirmTitle');
+                const msgEl = document.getElementById('uiConfirmMessage');
+                const okBtn = document.getElementById('uiConfirmOk');
+                const cancelBtn = document.getElementById('uiConfirmCancel');
+                if (!overlay || !dialog) { resolve(null); return; }
+
+                iconEl.className = `ui-icon ${type}`;
+                iconEl.innerHTML = `<i class="fas ${UI_ICON_MAP[type] || UI_ICON_MAP.delete}"></i>`;
+                titleEl.textContent = title || 'Confirmar';
+                msgEl.innerHTML = `${message || ''}<input type="password" id="uiPwdInput" placeholder="Contraseña" autocomplete="current-password" style="width:100%;margin-top:12px;padding:9px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:12px;outline:none;text-align:center;">`;
+                okBtn.textContent = confirmText;
+                cancelBtn.textContent = 'Cancelar';
+                okBtn.className = `btn ${UI_BTN_CLASS[type] || 'btn-danger'}`;
+                dialog.classList.remove('closing');
+                overlay.classList.add('open');
+
+                const close = (result) => {
+                    dialog.classList.add('closing');
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.classList.remove('open');
+                        overlay.style.opacity = '';
+                        dialog.classList.remove('closing');
+                        msgEl.textContent = '';
+                        resolve(result);
+                    }, 200);
+                };
+
+                const tryConfirm = () => {
+                    const input = document.getElementById('uiPwdInput');
+                    const val = input ? input.value : '';
+                    close(val);
+                };
+
+                okBtn.onclick = tryConfirm;
+                cancelBtn.onclick = () => close(null);
+                overlay.onclick = (e) => { if (e.target === overlay) close(null); };
+                setTimeout(() => {
+                    const input = document.getElementById('uiPwdInput');
+                    if (input) {
+                        input.focus();
+                        input.onkeydown = (e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); tryConfirm(); }
+                        };
+                    }
+                }, 50);
+            });
+        }
+
         async function eliminarBD() {
             if (!isManager) return;
-            const pwd = prompt(
-                '⚠️ Esta acción eliminará TODOS los registros de forma permanente.\n\nIngrese la contraseña para confirmar:'
-            );
-            if (pwd === null) return;
-            if (pwd !== MANAGER_PASSWORD && pwd !== 'Control Interno2026') {
-                showToast('Contraseña incorrecta. No se eliminó ningún registro', 'delete');
-                return;
-            }
+
+            // Paso 1: confirmación minimalista
             const ok = await showConfirm({
                 title: 'Eliminar base de datos',
-                message: '¿Está completamente seguro? Esta acción NO se puede deshacer y borrará todos los documentos e historial.',
+                message: 'Esta acción borrará TODOS los documentos e historial de forma permanente. ¿Desea continuar?',
                 type: 'delete',
-                confirmText: 'Eliminar todo',
+                confirmText: 'Continuar',
                 cancelText: 'Cancelar'
             });
             if (!ok) return;
+
+            // Paso 2: contraseña en diálogo minimalista
+            const pwd = await showPasswordConfirm({
+                title: 'Contraseña requerida',
+                message: 'Ingrese la contraseña de Control Interno para confirmar la eliminación.',
+                type: 'delete',
+                confirmText: 'Eliminar todo'
+            });
+            if (pwd === null) return;
+            if (pwd !== MANAGER_PASSWORD && pwd !== 'ControlInterno2026') {
+                showToast('Contraseña incorrecta. No se eliminó ningún registro', 'delete');
+                return;
+            }
+
             data = getDefaultData();
             saveData(data);
             generalFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
