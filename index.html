@@ -727,6 +727,7 @@
             display: flex;
             gap: 3px;
             align-items: center;
+            position: relative;
         }
         .modal .form-grid-modal .select-with-add select {
             flex: 1;
@@ -737,6 +738,7 @@
             color: var(--text-primary);
             font-size: 10px;
             outline: none;
+            cursor: pointer;
         }
         .modal .form-grid-modal .select-with-add .btn-add {
             padding: 3px 8px;
@@ -747,6 +749,68 @@
             font-size: 10px;
             cursor: pointer;
         }
+        /* Dropdown personalizado con botón eliminar por opción */
+        .cs-dropdown {
+            position: fixed;
+            z-index: 5500;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+            max-height: 220px;
+            overflow-y: auto;
+            min-width: 180px;
+            display: none;
+            padding: 4px 0;
+        }
+        .cs-dropdown.open { display: block; }
+        .cs-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 8px 5px 10px;
+            font-size: 10px;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: background 0.12s;
+        }
+        .cs-option:hover { background: var(--bg-primary); }
+        .cs-option.selected { background: var(--filter-active-bg); color: var(--blue); font-weight: 600; }
+        .cs-option .cs-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .cs-option .cs-del {
+            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            padding: 0;
+        }
+        .cs-option .cs-del:hover {
+            background: #fee2e2;
+            color: var(--red);
+        }
+        [data-theme="dark"] .cs-option .cs-del:hover {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+        .cs-option.cs-empty {
+            color: var(--text-secondary);
+            font-style: italic;
+            cursor: default;
+        }
+        .cs-option.cs-empty:hover { background: transparent; }
         .modal .form-grid-modal input,
         .modal .form-grid-modal textarea {
             width: 100%;
@@ -2109,6 +2173,7 @@
                     <div class="filtros-actions">
                         <button class="btn btn-sm" onclick="resetFiltrosGenerales()" title="Limpiar filtros generales"><i class="fas fa-undo-alt"></i></button>
                         <button class="btn btn-sm btn-warning" onclick="resetAllFilters()" title="Limpiar filtros de columnas"><i class="fas fa-filter"></i></button>
+                        <button class="btn btn-sm" id="btnCheckDup" onclick="openDupCheckModal()" title="Verificar nomenclatura duplicada" style="background:#6366f1;color:white;border-color:#6366f1;"><i class="fas fa-clone"></i></button>
                         <button class="btn btn-sm manager-only" id="btnColumnVisibility" onclick="openColumnVisibilityModal()" title="Ocultar columnas para Consultores" style="background:#64748b;color:white;border-color:#64748b;"><i class="fas fa-eye-slash"></i></button>
                     </div>
                 </div>
@@ -2320,6 +2385,35 @@
         </div>
     </div>
 
+    <!-- Prompt minimalista (agregar valor a catálogo) -->
+    <div class="ui-overlay" id="uiPromptOverlay" role="dialog" aria-modal="true">
+        <div class="ui-dialog" id="uiPromptDialog">
+            <div class="ui-icon save" id="uiPromptIcon"><i class="fas fa-plus"></i></div>
+            <h3 id="uiPromptTitle">Nuevo valor</h3>
+            <p id="uiPromptMessage">Ingrese el nuevo valor</p>
+            <input type="text" id="uiPromptInput" placeholder="Escriba aquí..." autocomplete="off" style="width:100%;margin:0 0 14px;padding:9px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:12px;outline:none;text-align:center;">
+            <div class="ui-actions">
+                <button type="button" class="btn btn-ghost" id="uiPromptCancel">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="uiPromptOk">Agregar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Verificar nomenclatura duplicada -->
+    <div class="ui-overlay" id="uiDupOverlay" role="dialog" aria-modal="true">
+        <div class="ui-dialog" id="uiDupDialog" style="max-width:380px;">
+            <div class="ui-icon info" id="uiDupIcon"><i class="fas fa-clone"></i></div>
+            <h3>Verificar nomenclatura</h3>
+            <p style="margin-bottom:10px;">Ingrese una nomenclatura para comprobar si ya está en uso y ver alternativas disponibles.</p>
+            <input type="text" id="uiDupInput" placeholder="Ej. CM-POP-CONTCI-01" autocomplete="off" style="width:100%;margin:0 0 10px;padding:9px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:12px;outline:none;text-align:center;font-family:monospace;">
+            <div id="uiDupResult" style="display:none;text-align:left;margin:0 0 12px;padding:10px 12px;border-radius:10px;font-size:11px;line-height:1.45;border:1px solid var(--border-color);background:var(--bg-primary);"></div>
+            <div class="ui-actions">
+                <button type="button" class="btn btn-ghost" id="uiDupClose">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="uiDupCheck"><i class="fas fa-search"></i> Verificar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toasts -->
     <div id="toastContainer"></div>
 
@@ -2428,6 +2522,74 @@
                 okBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); close(true); };
                 cancelBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); close(false); };
                 overlay.onclick = (e) => { if (e.target === overlay) close(false); };
+            });
+        }
+
+        let _promptResolve = null;
+        function showPrompt({ title = 'Nuevo valor', message = 'Ingrese el nuevo valor', defaultValue = '', placeholder = 'Escriba aquí...', confirmText = 'Agregar', cancelText = 'Cancelar' } = {}) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('uiPromptOverlay');
+                const dialog = document.getElementById('uiPromptDialog');
+                const titleEl = document.getElementById('uiPromptTitle');
+                const msgEl = document.getElementById('uiPromptMessage');
+                const input = document.getElementById('uiPromptInput');
+                const okBtn = document.getElementById('uiPromptOk');
+                const cancelBtn = document.getElementById('uiPromptCancel');
+                if (!overlay || !dialog || !input || !okBtn || !cancelBtn) {
+                    const v = window.prompt(message || title, defaultValue);
+                    resolve(v);
+                    return;
+                }
+                if (_promptResolve) {
+                    try { _promptResolve(null); } catch (e) {}
+                    _promptResolve = null;
+                }
+                _promptResolve = resolve;
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+                input.value = defaultValue || '';
+                input.placeholder = placeholder;
+                okBtn.textContent = confirmText;
+                cancelBtn.textContent = cancelText;
+                dialog.classList.remove('closing');
+                overlay.style.opacity = '';
+                overlay.classList.remove('open');
+                void overlay.offsetWidth;
+                overlay.classList.add('open');
+
+                const close = (result) => {
+                    if (!_promptResolve) return;
+                    const done = _promptResolve;
+                    _promptResolve = null;
+                    dialog.classList.add('closing');
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.classList.remove('open');
+                        overlay.style.opacity = '';
+                        dialog.classList.remove('closing');
+                        done(result);
+                    }, 200);
+                };
+
+                okBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const val = (input.value || '').trim();
+                    close(val === '' ? null : val);
+                };
+                cancelBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); close(null); };
+                overlay.onclick = (e) => { if (e.target === overlay) close(null); };
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const val = (input.value || '').trim();
+                        close(val === '' ? null : val);
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        close(null);
+                    }
+                };
+                setTimeout(() => { input.focus(); input.select(); }, 60);
             });
         }
 
@@ -2838,7 +3000,29 @@
             return true;
         }
 
-        function getDefaultData() { return { documents: [], history: [], nextId: 1, historyNextId: 1 }; }
+        function getEmptyCatalogs() {
+            return {
+                unidad: [], macro: [], area: [], departamento: [],
+                tipo: [], categoria: [], clasificacion: [], status: []
+            };
+        }
+        function getDefaultData() {
+            return {
+                documents: [], history: [], nextId: 1, historyNextId: 1,
+                catalogs: getEmptyCatalogs(),
+                catalogsExcluded: getEmptyCatalogs()
+            };
+        }
+        function ensureCatalogs(d) {
+            if (!d.catalogs || typeof d.catalogs !== 'object') d.catalogs = getEmptyCatalogs();
+            if (!d.catalogsExcluded || typeof d.catalogsExcluded !== 'object') d.catalogsExcluded = getEmptyCatalogs();
+            const empty = getEmptyCatalogs();
+            Object.keys(empty).forEach(k => {
+                if (!Array.isArray(d.catalogs[k])) d.catalogs[k] = [];
+                if (!Array.isArray(d.catalogsExcluded[k])) d.catalogsExcluded[k] = [];
+            });
+            return d;
+        }
 
         // ---------- SUPABASE helpers ----------
         async function loadFromSupabase() {
@@ -2880,12 +3064,39 @@
                 }));
 
                 let nextId = 1, historyNextId = 1;
+                let catalogs = getEmptyCatalogs();
+                let catalogsExcluded = getEmptyCatalogs();
                 (metaRes.data || []).forEach(m => {
                     if (m.key === 'nextId') nextId = Number(m.value) || 1;
                     if (m.key === 'historyNextId') historyNextId = Number(m.value) || 1;
+                    if (m.key === 'catalogs' && m.value_text) {
+                        try {
+                            const parsed = JSON.parse(m.value_text);
+                            if (parsed && typeof parsed === 'object') {
+                                // Formato nuevo: { catalogs: {...}, excluded: {...} } o formato antiguo (solo arrays por campo)
+                                if (parsed.catalogs || parsed.excluded) {
+                                    catalogs = getEmptyCatalogs();
+                                    const src = parsed.catalogs || {};
+                                    Object.keys(catalogs).forEach(k => {
+                                        if (Array.isArray(src[k])) catalogs[k] = src[k];
+                                    });
+                                    catalogsExcluded = getEmptyCatalogs();
+                                    const ex = parsed.excluded || {};
+                                    Object.keys(catalogsExcluded).forEach(k => {
+                                        if (Array.isArray(ex[k])) catalogsExcluded[k] = ex[k];
+                                    });
+                                } else {
+                                    catalogs = getEmptyCatalogs();
+                                    Object.keys(catalogs).forEach(k => {
+                                        if (Array.isArray(parsed[k])) catalogs[k] = parsed[k];
+                                    });
+                                }
+                            }
+                        } catch (e) {}
+                    }
                 });
 
-                return { documents, history, nextId, historyNextId };
+                return { documents, history, nextId, historyNextId, catalogs, catalogsExcluded };
             } catch (err) {
                 console.warn('[Supabase] No disponible, usando localStorage:', err.message || err);
                 return null;
@@ -2933,9 +3144,12 @@
                     if (error) throw error;
                 }
 
+                const catalogs = (d.catalogs && typeof d.catalogs === 'object') ? d.catalogs : getEmptyCatalogs();
+                const catalogsExcluded = (d.catalogsExcluded && typeof d.catalogsExcluded === 'object') ? d.catalogsExcluded : getEmptyCatalogs();
                 await supabaseClient.from('meta').upsert([
                     { key: 'nextId', value: d.nextId || 1 },
-                    { key: 'historyNextId', value: d.historyNextId || 1 }
+                    { key: 'historyNextId', value: d.historyNextId || 1 },
+                    { key: 'catalogs', value: Date.now(), value_text: JSON.stringify({ catalogs, excluded: catalogsExcluded }) }
                 ]);
 
                 return true;
@@ -2950,7 +3164,7 @@
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (raw) {
                     const p = JSON.parse(raw);
-                    if (p.documents !== undefined) return p;
+                    if (p.documents !== undefined) return ensureCatalogs(p);
                 }
             } catch (e) {}
             return getDefaultData();
@@ -2969,6 +3183,7 @@
             // 1. Intentar Supabase (prioridad)
             const remote = await loadFromSupabase();
             if (remote !== null) {
+                ensureCatalogs(remote);
                 // Guardar también en localStorage como respaldo
                 saveToLocalStorage(remote);
                 return remote;
@@ -2987,7 +3202,7 @@
         }
 
         async function saveData(d) {
-            data = d; // mantener referencia global
+            data = ensureCatalogs(d); // mantener referencia global + catálogos
 
             // 1. Prioridad: Supabase
             const ok = await saveToSupabase(d);
@@ -3059,7 +3274,7 @@
 
                 const remote = await loadFromSupabase();
                 if (remote) {
-                    data = remote;
+                    data = ensureCatalogs(remote);
                     saveToLocalStorage(remote);
                 }
                 renderAll();
@@ -4307,28 +4522,27 @@
             document.querySelectorAll('.required-field').forEach(f => f.classList.remove('valid', 'invalid'));
         }
 
+        function getCatalogOptions(fieldKey, baseList) {
+            ensureCatalogs(data);
+            const fromDocs = getUniqueValuesFromDocs(fieldKey, data.documents);
+            const fromCatalog = data.catalogs[fieldKey] || [];
+            const base = baseList || [];
+            const excluded = new Set((data.catalogsExcluded[fieldKey] || []).map(v => String(v)));
+            return [...new Set([...base, ...fromDocs, ...fromCatalog]
+                .filter(v => v && String(v).trim() !== '' && !excluded.has(String(v))))]
+                .sort((a, b) => String(a).localeCompare(String(b), 'es', { sensitivity: 'base' }));
+        }
+
         function populateModalSelects() {
-            const all = data.documents;
-            const u = getUniqueValuesFromDocs('unidad', all);
-            populateSelect('mUnidad', u, '');
-            const m = getUniqueValuesFromDocs('macro', all);
-            populateSelect('mMacro', m, '');
-            const a = getUniqueValuesFromDocs('area', all);
-            populateSelect('mArea', a, '');
-            const d = getUniqueValuesFromDocs('departamento', all);
-            populateSelect('mDepartamento', d, '');
-            const tEx = getUniqueValuesFromDocs('tipo', all);
-            const tOpts = [...new Set([...TIPOS_DOCUMENTO, ...tEx])].sort();
-            populateSelect('mTipo', tOpts, '');
-            const cEx = getUniqueValuesFromDocs('categoria', all);
-            const cOpts = [...new Set([...CATEGORIAS, ...cEx])].sort();
-            populateSelect('mCategoria', cOpts, '');
-            const clEx = getUniqueValuesFromDocs('clasificacion', all);
-            const clOpts = [...new Set([...CLASIFICACIONES, ...clEx])].sort();
-            populateSelect('mClasificacion', clOpts, '');
-            const sEx = getUniqueValuesFromDocs('status', all);
-            const sOpts = [...new Set([...ESTADOS, ...sEx])].sort();
-            populateSelect('mStatus', sOpts, '');
+            ensureCatalogs(data);
+            populateSelect('mUnidad', getCatalogOptions('unidad'), '');
+            populateSelect('mMacro', getCatalogOptions('macro'), '');
+            populateSelect('mArea', getCatalogOptions('area'), '');
+            populateSelect('mDepartamento', getCatalogOptions('departamento'), '');
+            populateSelect('mTipo', getCatalogOptions('tipo', TIPOS_DOCUMENTO), '');
+            populateSelect('mCategoria', getCatalogOptions('categoria', CATEGORIAS), '');
+            populateSelect('mClasificacion', getCatalogOptions('clasificacion', CLASIFICACIONES), '');
+            populateSelect('mStatus', getCatalogOptions('status', ESTADOS), '');
             setTimeout(autoSetCategoria, 50);
             setTimeout(() => { document.querySelectorAll('.required-field').forEach(f => validateField(f)); }, 100);
         }
@@ -4349,32 +4563,273 @@
             if (current && Array.from(sel.options).some(o => o.value === current)) sel.value = current;
             else if (defaultVal && Array.from(sel.options).some(o => o.value === defaultVal)) sel.value = defaultVal;
             else sel.value = '';
+            // Activar dropdown personalizado con eliminar
+            attachCustomSelectDelete(id);
         }
 
-        function addNewOption(selectId, defaultName) {
-            if (!isManager) return;
-            const val = prompt('Ingrese el nuevo valor:', defaultName);
-            if (!val || val.trim() === '') return;
+        let _openCustomSelect = null;
+
+        function closeCustomSelectDropdown() {
+            document.querySelectorAll('.cs-dropdown.open').forEach(dd => dd.classList.remove('open'));
+            _openCustomSelect = null;
+        }
+
+        function attachCustomSelectDelete(selectId) {
+            const sel = document.getElementById(selectId);
+            if (!sel || !SELECT_TO_CATALOG_KEY[selectId]) return;
+            if (sel.dataset.csBound === '1') return;
+            sel.dataset.csBound = '1';
+
+            sel.addEventListener('mousedown', function(e) {
+                if (!isManager) return; // consultores usan select nativo
+                e.preventDefault();
+                e.stopPropagation();
+                toggleCustomSelectDropdown(selectId);
+            });
+            // También en focus con teclado
+            sel.addEventListener('keydown', function(e) {
+                if (!isManager) return;
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    toggleCustomSelectDropdown(selectId);
+                }
+            });
+        }
+
+        function toggleCustomSelectDropdown(selectId) {
             const sel = document.getElementById(selectId);
             if (!sel) return;
-            if (Array.from(sel.options).some(o => o.value === val.trim())) { showToast('Ese valor ya existe', 'warning'); return; }
-            const opt = document.createElement('option');
-            opt.value = val.trim();
-            opt.textContent = val.trim();
-            opt.selected = true;
-            sel.appendChild(opt);
-            const opts = Array.from(sel.options);
-            opts.sort((a, b) => a.value.localeCompare(b.value));
-            sel.innerHTML = '';
-            opts.forEach(o => sel.appendChild(o));
-            sel.value = val.trim();
+            let dd = document.getElementById('cs-dd-' + selectId);
+            if (!dd) {
+                dd = document.createElement('div');
+                dd.className = 'cs-dropdown';
+                dd.id = 'cs-dd-' + selectId;
+                document.body.appendChild(dd);
+            }
+
+            if (_openCustomSelect === selectId && dd.classList.contains('open')) {
+                closeCustomSelectDropdown();
+                return;
+            }
+            closeCustomSelectDropdown();
+            renderCustomSelectOptions(selectId, dd);
+            positionCustomSelectDropdown(sel, dd);
+            dd.classList.add('open');
+            _openCustomSelect = selectId;
+        }
+
+        function positionCustomSelectDropdown(sel, dd) {
+            const rect = sel.getBoundingClientRect();
+            const width = Math.max(rect.width, 200);
+            let left = rect.left;
+            let top = rect.bottom + 3;
+            if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+            const estH = 220;
+            if (top + estH > window.innerHeight - 8 && rect.top > estH) {
+                top = rect.top - Math.min(estH, dd.scrollHeight || estH) - 3;
+            }
+            dd.style.left = left + 'px';
+            dd.style.top = top + 'px';
+            dd.style.width = width + 'px';
+        }
+
+        function renderCustomSelectOptions(selectId, dd) {
+            const sel = document.getElementById(selectId);
+            if (!sel || !dd) return;
+            const catalogKey = SELECT_TO_CATALOG_KEY[selectId];
+            const current = sel.value;
+            const options = Array.from(sel.options).filter(o => o.value !== '');
+
+            if (options.length === 0) {
+                dd.innerHTML = '<div class="cs-option cs-empty">Sin opciones</div>';
+                return;
+            }
+
+            dd.innerHTML = options.map(o => {
+                const val = o.value;
+                const safe = val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                const selected = val === current ? 'selected' : '';
+                return `<div class="cs-option ${selected}" data-value="${safe}">
+                    <span class="cs-label">${safe}</span>
+                    <button type="button" class="cs-del" title="Eliminar del catálogo" data-del="${safe}"><i class="fas fa-trash-alt"></i></button>
+                </div>`;
+            }).join('');
+
+            dd.querySelectorAll('.cs-option').forEach(row => {
+                const delBtn = row.querySelector('.cs-del');
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('.cs-del')) return;
+                    const v = row.getAttribute('data-value');
+                    // decode entities roughly - data-value was escaped
+                    const decoded = v.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
+                    sel.value = decoded;
+                    validateField(sel);
+                    if (selectId === 'mTipo') autoSetCategoria();
+                    closeCustomSelectDropdown();
+                });
+                if (delBtn) {
+                    delBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const v = delBtn.getAttribute('data-del');
+                        const decoded = v.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
+                        deleteCatalogOption(selectId, decoded);
+                    });
+                }
+            });
+        }
+
+        async function deleteCatalogOption(selectId, value) {
+            if (!isManager) return;
+            const catalogKey = SELECT_TO_CATALOG_KEY[selectId];
+            const fieldLabel = SELECT_LABELS[selectId] || catalogKey;
+            if (!catalogKey || !value) return;
+
+            // Cerrar el desplegable para que no quede encima del modal de confirmación
+            closeCustomSelectDropdown();
+
+            const authorized = await requireDeleteAuth({
+                title: 'Eliminar del catálogo',
+                message: `¿Eliminar "${value}" de ${fieldLabel}? Dejará de aparecer en el desplegable.`,
+                confirmText: 'Eliminar'
+            });
+            if (!authorized) return;
+
+            ensureCatalogs(data);
+
+            // Quitar de catálogo personalizado
+            data.catalogs[catalogKey] = (data.catalogs[catalogKey] || []).filter(v => v !== value);
+            // Marcar como excluido (cubre listas base y valores de documentos)
+            if (!data.catalogsExcluded[catalogKey].includes(value)) {
+                data.catalogsExcluded[catalogKey].push(value);
+            }
+
+            // Si estaba seleccionado, limpiar
+            const sel = document.getElementById(selectId);
+            if (sel && sel.value === value) {
+                sel.value = '';
+                validateField(sel);
+            }
+
+            data.history.push({
+                id: data.historyNextId++,
+                text: `🗑️ Eliminado del catálogo ${fieldLabel}: ${value}`,
+                timestamp: Date.now()
+            });
+            saveData(data);
+            renderHistory();
+
+            // Refrescar opciones del modal preservando selecciones
+            const currentSelections = {};
+            Object.keys(SELECT_TO_CATALOG_KEY).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) currentSelections[id] = el.value;
+            });
+            populateModalSelects();
+            Object.keys(currentSelections).forEach(id => {
+                const el = document.getElementById(id);
+                if (el && currentSelections[id]) el.value = currentSelections[id];
+            });
+            closeCustomSelectDropdown();
+            showToast(`"${value}" eliminado del catálogo`, 'delete');
+        }
+
+        const SELECT_TO_CATALOG_KEY = {
+            mUnidad: 'unidad',
+            mMacro: 'macro',
+            mArea: 'area',
+            mDepartamento: 'departamento',
+            mTipo: 'tipo',
+            mCategoria: 'categoria',
+            mClasificacion: 'clasificacion',
+            mStatus: 'status'
+        };
+        const SELECT_LABELS = {
+            mUnidad: 'Unidad de Negocio',
+            mMacro: 'Macroproceso',
+            mArea: 'Área',
+            mDepartamento: 'Departamento',
+            mTipo: 'Tipo de Documento',
+            mCategoria: 'Categoría',
+            mClasificacion: 'Clasificación',
+            mStatus: 'Estado'
+        };
+
+        async function addNewOption(selectId, defaultName) {
+            if (!isManager) return;
+            const fieldLabel = SELECT_LABELS[selectId] || 'valor';
+            const catalogKey = SELECT_TO_CATALOG_KEY[selectId];
+            if (!catalogKey) return;
+
+            const val = await showPrompt({
+                title: 'Agregar ' + fieldLabel,
+                message: 'Ingrese el nuevo valor para el catálogo de ' + fieldLabel + '.',
+                defaultValue: '',
+                placeholder: defaultName || 'Nuevo valor',
+                confirmText: 'Agregar',
+                cancelText: 'Cancelar'
+            });
+            if (val === null || val === undefined) return;
+            const trimmed = String(val).trim();
+            if (!trimmed) {
+                showToast('El valor no puede estar vacío', 'warning');
+                return;
+            }
+
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+
+            ensureCatalogs(data);
+            // Si estaba excluido, se puede volver a agregar (se limpia abajo)
+            const wasExcluded = (data.catalogsExcluded[catalogKey] || []).includes(trimmed);
+            const existsInSelect = Array.from(sel.options).some(o => o.value === trimmed);
+            const existsInCatalog = (data.catalogs[catalogKey] || []).some(v => v === trimmed);
+            if ((existsInSelect || existsInCatalog) && !wasExcluded) {
+                showToast('Ese valor ya existe', 'warning');
+                if (existsInSelect) {
+                    sel.value = trimmed;
+                    validateField(sel);
+                    if (selectId === 'mTipo') autoSetCategoria();
+                }
+                return;
+            }
+            // Si estaba en catálogo pero excluido, limpiar y reactivar
+            if (wasExcluded && existsInCatalog) {
+                data.catalogs[catalogKey] = data.catalogs[catalogKey].filter(v => v !== trimmed);
+            }
+
+            // Quitar de excluidos si se había eliminado antes (permite re-agregar)
+            data.catalogsExcluded[catalogKey] = (data.catalogsExcluded[catalogKey] || []).filter(v => v !== trimmed);
+
+            // Persistir en catálogo
+            if (!data.catalogs[catalogKey].includes(trimmed)) {
+                data.catalogs[catalogKey].push(trimmed);
+                data.catalogs[catalogKey].sort((a, b) => String(a).localeCompare(String(b), 'es', { sensitivity: 'base' }));
+            }
+
+            const currentSelections = {};
+            ['mUnidad', 'mMacro', 'mArea', 'mDepartamento', 'mTipo', 'mCategoria', 'mClasificacion', 'mStatus'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) currentSelections[id] = el.value;
+            });
+            currentSelections[selectId] = trimmed;
+            populateModalSelects();
+            Object.keys(currentSelections).forEach(id => {
+                const el = document.getElementById(id);
+                if (el && currentSelections[id]) el.value = currentSelections[id];
+            });
             if (selectId === 'mTipo') autoSetCategoria();
             validateField(sel);
-            data.history.push({ id: data.historyNextId++, text: `➕ Nuevo valor en ${selectId.replace('m','')}: ${val.trim()}`,
-                timestamp: Date.now() });
+
+            data.history.push({
+                id: data.historyNextId++,
+                text: `➕ Nuevo valor en ${fieldLabel}: ${trimmed}`,
+                timestamp: Date.now()
+            });
             saveData(data);
             renderHistory();
             actualizarFiltrosGenerales();
+            showToast(`"${trimmed}" agregado a ${fieldLabel}`, 'success');
         }
 
         function autoSetCategoria() {
@@ -4386,6 +4841,182 @@
                         i; break; } }
             validateField(catSel);
         }
+
+
+        // ============================================================
+        // VERIFICAR NOMENCLATURA DUPLICADA
+        // ============================================================
+        function parseNomenclatura(nom) {
+            const s = String(nom || '').trim();
+            if (!s) return null;
+            // Prefijo + número final (con ceros a la izquierda opcionales)
+            const m = s.match(/^(.*?)(\d+)$/);
+            if (!m) return { prefix: s, num: null, pad: 0, raw: s };
+            return {
+                prefix: m[1],
+                num: parseInt(m[2], 10),
+                pad: m[2].length,
+                raw: s
+            };
+        }
+
+        function getUsedNumbersForPrefix(prefix) {
+            const used = new Set();
+            const docs = (data && data.documents) ? data.documents : [];
+            docs.forEach(d => {
+                const n = String(d.nomenclatura || '').trim();
+                if (!n) return;
+                // Coincidencia exacta de prefijo (case-sensitive para nomenclaturas)
+                if (n.startsWith(prefix)) {
+                    const rest = n.slice(prefix.length);
+                    if (/^\d+$/.test(rest)) {
+                        used.add(parseInt(rest, 10));
+                    }
+                }
+            });
+            return used;
+        }
+
+        function findAvailableNomenclatures(nom, count = 3) {
+            const exact = String(nom || '').trim();
+            const parsed = parseNomenclatura(exact);
+            const docs = (data && data.documents) ? data.documents : [];
+            const exactMatch = docs.find(d => String(d.nomenclatura || '').trim() === exact);
+            const exists = !!exactMatch;
+
+            if (!parsed || parsed.num === null) {
+                return { parsed, exists, exactMatch, suggestions: [] };
+            }
+
+            const used = getUsedNumbersForPrefix(parsed.prefix);
+            // Asegurar que el número exacto cuente si existe con ese código
+            if (exists) used.add(parsed.num);
+
+            const suggestions = [];
+            let candidate = 1;
+            const maxUsed = used.size ? Math.max(...used) : 0;
+            const limit = Math.max(maxUsed + count + 5, parsed.num + 30, 30);
+
+            while (suggestions.length < count && candidate <= limit) {
+                if (!used.has(candidate)) {
+                    const code = parsed.prefix + String(candidate).padStart(parsed.pad, '0');
+                    if (code !== exact) {
+                        suggestions.push(code);
+                    }
+                }
+                candidate++;
+            }
+            return { parsed, exists, exactMatch, suggestions };
+        }
+
+        function openDupCheckModal() {
+            const overlay = document.getElementById('uiDupOverlay');
+            const input = document.getElementById('uiDupInput');
+            const result = document.getElementById('uiDupResult');
+            if (!overlay) return;
+            if (input) input.value = '';
+            if (result) {
+                result.style.display = 'none';
+                result.innerHTML = '';
+            }
+            overlay.classList.add('open');
+            setTimeout(() => input && input.focus(), 50);
+        }
+
+        function closeDupCheckModal() {
+            const overlay = document.getElementById('uiDupOverlay');
+            if (overlay) {
+                const dialog = document.getElementById('uiDupDialog');
+                if (dialog) dialog.classList.add('closing');
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.classList.remove('open');
+                    overlay.style.opacity = '';
+                    if (dialog) dialog.classList.remove('closing');
+                }, 200);
+            }
+        }
+
+        function runDupCheck() {
+            const input = document.getElementById('uiDupInput');
+            const result = document.getElementById('uiDupResult');
+            if (!input || !result) return;
+            const nom = (input.value || '').trim();
+            if (!nom) {
+                result.style.display = 'block';
+                result.style.borderColor = 'var(--yellow)';
+                result.innerHTML = '<strong style="color:#d97706;">⚠️</strong> Escriba una nomenclatura para verificar.';
+                return;
+            }
+
+            const { parsed, exists, suggestions } = findAvailableNomenclatures(nom, 3);
+            const exactMatch = (data.documents || []).find(d => String(d.nomenclatura || '').trim() === nom);
+
+            if (parsed.num === null) {
+                // Sin número final
+                if (exists || exactMatch) {
+                    result.style.borderColor = 'var(--red)';
+                    result.innerHTML = `
+                        <div style="margin-bottom:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:#fee2e2;color:#991b1b;font-weight:700;font-size:10px;">OCUPADA</span></div>
+                        <div style="font-family:monospace;font-weight:600;margin-bottom:4px;">${nom}</div>
+                        <div style="color:var(--text-secondary);font-size:10px;">Ya existe en la matriz${exactMatch ? ` · ${exactMatch.nombre || ''}` : ''}.</div>
+                        <div style="margin-top:8px;color:var(--text-secondary);font-size:10px;">No se detectó un sufijo numérico para sugerir alternativas (ej. …-01).</div>`;
+                } else {
+                    result.style.borderColor = 'var(--green)';
+                    result.innerHTML = `
+                        <div style="margin-bottom:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#166534;font-weight:700;font-size:10px;">DISPONIBLE</span></div>
+                        <div style="font-family:monospace;font-weight:600;">${nom}</div>
+                        <div style="color:var(--text-secondary);font-size:10px;margin-top:4px;">No hay documentos con esta nomenclatura.</div>`;
+                }
+                result.style.display = 'block';
+                return;
+            }
+
+            if (exists) {
+                const sugHtml = suggestions.length
+                    ? `<div style="margin-top:10px;"><div style="font-weight:600;margin-bottom:4px;font-size:10px;color:var(--text-secondary);">Opciones disponibles:</div>
+                        ${suggestions.map(s => `<div style="font-family:monospace;padding:4px 8px;margin:3px 0;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);cursor:pointer;" onclick="document.getElementById('uiDupInput').value='${s.replace(/'/g, "\'")}'; runDupCheck();" title="Usar esta nomenclatura"><i class="fas fa-check" style="color:var(--green);font-size:9px;margin-right:4px;"></i>${s}</div>`).join('')}
+                      </div>`
+                    : '<div style="margin-top:8px;color:var(--text-secondary);font-size:10px;">No se encontraron alternativas en el rango analizado.</div>';
+
+                result.style.borderColor = 'var(--red)';
+                result.innerHTML = `
+                    <div style="margin-bottom:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:#fee2e2;color:#991b1b;font-weight:700;font-size:10px;">OCUPADA</span></div>
+                    <div style="font-family:monospace;font-weight:600;margin-bottom:2px;">${nom}</div>
+                    <div style="color:var(--text-secondary);font-size:10px;">${exactMatch ? (exactMatch.nombre || 'Documento existente') : 'Ya registrada en la matriz'}.</div>
+                    ${sugHtml}`;
+            } else {
+                const sugHtml = suggestions.length
+                    ? `<div style="margin-top:10px;"><div style="font-weight:600;margin-bottom:4px;font-size:10px;color:var(--text-secondary);">Otras opciones libres:</div>
+                        ${suggestions.map(s => `<div style="font-family:monospace;padding:4px 8px;margin:3px 0;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);">${s}</div>`).join('')}
+                      </div>`
+                    : '';
+                result.style.borderColor = 'var(--green)';
+                result.innerHTML = `
+                    <div style="margin-bottom:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#166534;font-weight:700;font-size:10px;">DISPONIBLE</span></div>
+                    <div style="font-family:monospace;font-weight:600;">${nom}</div>
+                    <div style="color:var(--text-secondary);font-size:10px;margin-top:4px;">Puede usarse para un nuevo documento.</div>
+                    ${sugHtml}`;
+            }
+            result.style.display = 'block';
+        }
+
+        function initDupCheckModal() {
+            const overlay = document.getElementById('uiDupOverlay');
+            const closeBtn = document.getElementById('uiDupClose');
+            const checkBtn = document.getElementById('uiDupCheck');
+            const input = document.getElementById('uiDupInput');
+            if (closeBtn) closeBtn.onclick = (e) => { e.preventDefault(); closeDupCheckModal(); };
+            if (checkBtn) checkBtn.onclick = (e) => { e.preventDefault(); runDupCheck(); };
+            if (overlay) overlay.onclick = (e) => { if (e.target === overlay) closeDupCheckModal(); };
+            if (input) {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); runDupCheck(); }
+                    if (e.key === 'Escape') { e.preventDefault(); closeDupCheckModal(); }
+                });
+            }
+        }
+
 
         function convertDateToInput(dateStr) {
             if (!dateStr) return '';
@@ -5110,9 +5741,20 @@
         // RENDER ALL
         // ============================================================
         function renderAll() {
+            const modalOpen = document.getElementById('docModal')?.classList.contains('active');
+            const preserved = {};
+            if (modalOpen) {
+                ['mUnidad', 'mNomenclatura', 'mNombre', 'mMacro', 'mArea', 'mDepartamento', 'mTipo', 'mCategoria',
+                    'mClasificacion', 'mVersion', 'mFechaEmision', 'mFechaActualizacion', 'mFechaAutorizacion',
+                    'mFechaDifusion', 'mHipervinculo', 'mComentarios', 'mStatus'
+                ].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) preserved[id] = el.value;
+                });
+            }
+
             renderTableHeaders();
             renderTable();
-            // Aplicar anchos y resizers después de pintar la tabla
             requestAnimationFrame(() => {
                 applyColumnWidths();
                 attachColumnResizers();
@@ -5123,6 +5765,18 @@
             if (document.getElementById('tab-dashboard').classList.contains('active')) setTimeout(renderDashboard,
             50);
             populateModalSelects();
+
+            if (modalOpen) {
+                Object.keys(preserved).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && preserved[id] !== undefined && preserved[id] !== '') {
+                        el.value = preserved[id];
+                    }
+                });
+                setTimeout(() => {
+                    document.querySelectorAll('#docModal .required-field').forEach(f => validateField(f));
+                }, 30);
+            }
         }
 
         // ============================================================
@@ -5161,6 +5815,23 @@
                 }
             });
         }
+
+        document.addEventListener('click', function(e) {
+            if (!_openCustomSelect) return;
+            const dd = document.getElementById('cs-dd-' + _openCustomSelect);
+            const sel = document.getElementById(_openCustomSelect);
+            if (dd && !dd.contains(e.target) && sel && !sel.contains(e.target)) {
+                closeCustomSelectDropdown();
+            }
+        });
+        document.addEventListener('scroll', function() {
+            if (_openCustomSelect) closeCustomSelectDropdown();
+        }, true);
+        window.addEventListener('resize', function() {
+            if (_openCustomSelect) closeCustomSelectDropdown();
+        });
+
+        initDupCheckModal();
         initializeApp();
     </script>
 
