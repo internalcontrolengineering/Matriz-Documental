@@ -759,6 +759,8 @@
             box-shadow: 0 12px 32px rgba(0,0,0,0.18);
             max-height: 220px;
             overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
             min-width: 180px;
             display: none;
             padding: 4px 0;
@@ -4660,7 +4662,6 @@
                 row.addEventListener('click', (e) => {
                     if (e.target.closest('.cs-del')) return;
                     const v = row.getAttribute('data-value');
-                    // decode entities roughly - data-value was escaped
                     const decoded = v.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
                     sel.value = decoded;
                     validateField(sel);
@@ -4677,6 +4678,16 @@
                     });
                 }
             });
+            // Evitar que el scroll/rueda cierre o mueva el modal detrás
+            if (dd.dataset.wheelBound !== '1') {
+                dd.dataset.wheelBound = '1';
+                dd.addEventListener('wheel', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+                dd.addEventListener('touchmove', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+            }
         }
 
         async function deleteCatalogOption(selectId, value) {
@@ -5824,11 +5835,26 @@
                 closeCustomSelectDropdown();
             }
         });
-        document.addEventListener('scroll', function() {
-            if (_openCustomSelect) closeCustomSelectDropdown();
+        // Cerrar solo si el scroll ocurre FUERA del desplegable (no al desplazarse dentro de la lista)
+        document.addEventListener('scroll', function(e) {
+            if (!_openCustomSelect) return;
+            const dd = document.getElementById('cs-dd-' + _openCustomSelect);
+            const t = e.target;
+            if (dd && (t === dd || (t && dd.contains(t)))) return;
+            // Reposicionar si el scroll es del modal interno, o cerrar si es de página
+            const sel = document.getElementById(_openCustomSelect);
+            if (sel && dd && dd.classList.contains('open')) {
+                positionCustomSelectDropdown(sel, dd);
+            }
         }, true);
         window.addEventListener('resize', function() {
-            if (_openCustomSelect) closeCustomSelectDropdown();
+            if (_openCustomSelect) {
+                const sel = document.getElementById(_openCustomSelect);
+                const dd = document.getElementById('cs-dd-' + _openCustomSelect);
+                if (sel && dd && dd.classList.contains('open')) {
+                    positionCustomSelectDropdown(sel, dd);
+                }
+            }
         });
 
         initDupCheckModal();
