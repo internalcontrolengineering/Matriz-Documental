@@ -3485,6 +3485,7 @@
             { key: 'fechaAutorizacion', label: 'Fecha de Autorización' },
             { key: 'fechaDifusion', label: 'Fecha de difusión' },
             { key: 'hipervinculo', label: 'Hipervínculo' },
+            { key: 'documentoPadre', label: 'Documento Padre' },
             { key: 'status', label: 'Estado' },
             { key: 'acciones', label: 'Acciones' }
         ];
@@ -3856,6 +3857,7 @@
             if (key === 'id') return 40;
             if (key === 'hipervinculo') return 55;
             if (key === 'nombre') return 120;
+            if (key === 'documentoPadre') return 130;
             if (key === 'acciones') return 55;
             if (key === 'nomenclatura') return 90;
             return 75;
@@ -4481,6 +4483,9 @@
             // ID visual correlativo según el orden de los documentos filtrados
             tbody.innerHTML = filtered.map((doc, index) => {
                 const visualId = index + 1;
+                const padreEtiqueta = (typeof resolveDocumentoPadreInfo === 'function'
+                    ? resolveDocumentoPadreInfo(doc.documentoPadre).etiqueta
+                    : (doc.documentoPadre || '')) || '';
                 return `
                 <tr data-doc-id="${doc.id}">
                     <td class="${h('id')}" style="font-size:9px;font-weight:600;">${visualId}</td>
@@ -4499,6 +4504,7 @@
                     <td class="${h('fechaAutorizacion')}" style="font-size:9px;">${doc.fechaAutorizacion || '-'}</td>
                     <td class="${h('fechaDifusion')}" style="font-size:9px;">${doc.fechaDifusion || '-'}</td>
                     <td class="link-cell ${h('hipervinculo')}" style="font-size:9px;">${doc.hipervinculo ? `<a href="${doc.hipervinculo}" target="_blank" style="font-size:9px;"><i class="fas fa-link"></i> Ver</a>` : '-'}</td>
+                    <td class="${h('documentoPadre')}" style="font-size:9px;" title="${padreEtiqueta.replace(/"/g, '&quot;')}">${padreEtiqueta || '-'}</td>
                     <td class="${h('status')}" style="font-size:9px;"><span class="status-badge ${doc.status}" style="font-size:9px;">${doc.status}</span></td>
                     <td class="${h('acciones')}" style="text-align:center;">
                         ${isManager ? `<div class="actions-cell">
@@ -5948,7 +5954,7 @@
             const headers = ['ID', 'Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área', 'Departamento',
                 'Tipo de Documento', 'Categoría', 'Clasificación', 'Versión', 'Fecha de Emisión (1a versión)',
                 'Fecha de última Actualización', 'Fecha de Autorización', 'Fecha de difusión', 'Hipervínculo',
-                'Comentarios', 'Estado', 'Documento Padre'
+                'Comentarios', 'Documento Padre', 'Estado'
             ];
             let csv = '\uFEFF' + headers.join(',') + '\n';
             f.forEach(d => {
@@ -5959,8 +5965,8 @@
                     escapeCSVField(d.categoria || ''), escapeCSVField(d.clasificacion || ''), d.version || '',
                     d.fechaEmision || '', d.fechaActualizacion || '',
                     d.fechaAutorizacion || '', d.fechaDifusion || '', escapeCSVField(d.hipervinculo || ''),
-                    escapeCSVField(d.comentarios || ''), escapeCSVField(d.status || ''),
-                    escapeCSVField(padreInfo.etiqueta || '')
+                    escapeCSVField(d.comentarios || ''), escapeCSVField(padreInfo.etiqueta || ''),
+                    escapeCSVField(d.status || '')
                 ];
                 csv += row.join(',') + '\n';
             });
