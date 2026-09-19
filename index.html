@@ -5808,30 +5808,52 @@
         // EXPORT / IMPORT / TEMPLATE - CON DIÁLOGO "GUARDAR COMO"
         // ============================================================
 
-        // Función que muestra el diálogo "Guardar como" en todos los navegadores
+        // ============================================================
+        // EXPORT / IMPORT / TEMPLATE - CON DIÁLOGO "GUARDAR COMO"
+        // ============================================================
+
+        function extensionDeArchivo(nombre) {
+            const p = String(nombre || '').split('.');
+            return p.length > 1 ? ('.' + p.pop().toLowerCase()) : '';
+        }
+
+        function mimeYTipoParaGuardar(nombreArchivo, tipoMIME) {
+            const ext = extensionDeArchivo(nombreArchivo);
+            const map = {
+                '.json': { mime: 'application/json', description: 'JSON', accept: { 'application/json': ['.json'] } },
+                '.csv':  { mime: 'text/csv', description: 'CSV / Excel', accept: { 'text/csv': ['.csv'], 'application/vnd.ms-excel': ['.csv'] } },
+                '.txt':  { mime: 'text/plain', description: 'Texto', accept: { 'text/plain': ['.txt'] } },
+                '.xlsx': { mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', description: 'Excel', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }
+            };
+            if (map[ext]) return map[ext];
+            // Fallback genérico
+            const mime = (tipoMIME || 'application/octet-stream').split(';')[0].trim();
+            return {
+                mime,
+                description: 'Archivo',
+                accept: { [mime]: ext ? [ext] : ['.*'] }
+            };
+        }
+
+        // Diálogo nativo de descarga (fallback)
         function guardarConDialogo(contenido, nombreArchivo, tipoMIME) {
             return new Promise((resolve) => {
                 try {
-                    // Crear blob
-                    const blob = new Blob([contenido], { type: tipoMIME });
+                    const info = mimeYTipoParaGuardar(nombreArchivo, tipoMIME);
+                    const blob = new Blob([contenido], { type: info.mime });
                     const url = URL.createObjectURL(blob);
-                    
-                    // Crear enlace y forzar descarga con diálogo
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = nombreArchivo;
+                    a.rel = 'noopener';
                     a.style.display = 'none';
                     document.body.appendChild(a);
-                    
-                    // Esto activa el diálogo "Guardar como" en la mayoría de navegadores
                     a.click();
-                    
-                    // Limpiar después
                     setTimeout(() => {
-                        document.body.removeChild(a);
+                        try { document.body.removeChild(a); } catch (e) {}
                         URL.revokeObjectURL(url);
                         resolve(true);
-                    }, 500);
+                    }, 400);
                 } catch (err) {
                     console.error('Error en descarga:', err);
                     resolve(false);
@@ -5839,83 +5861,122 @@
             });
         }
 
-        // Función avanzada que intenta usar File System Access API primero
+        // Prioridad: File System Access API → diálogo "Guardar como" para elegir carpeta
         async function guardarConDialogoAvanzado(contenido, nombreArchivo, tipoMIME) {
-            try {
-                // Intentar usar File System Access API (navegadores modernos en HTTPS)
-                if ('showSaveFilePicker' in window) {
-                    try {
-                        const opciones = {
-                            suggestedName: nombreArchivo,
-                            types: [{
-                                description: 'Archivo',
-                                accept: { [tipoMIME]: ['.' + nombreArchivo.split('.').pop()] }
-                            }]
-                        };
-                        const handle = await window.showSaveFilePicker(opciones);
-                        const writable = await handle.createWritable();
+            const info = mimeYTipoParaGuardar(nombreArchivo, tipoMIME);
+
+            // 1) File System Access API (Chrome, Edge, etc. en HTTPS o localhost)
+            if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: nombreArchivo,
+                        types: [{
+                            description: info.description,
+                            accept: info.accept
+                        }],
+                        excludeAcceptAllOption: false
+                    });
+                    const writable = await handle.createWritable();
+                    // Escribir como texto o como Uint8Array según corresponda
+                    if (typeof contenido === 'string') {
                         await writable.write(contenido);
-                        await writable.close();
-                        return true;
-                    } catch (err) {
-                        // Si el usuario cancela, no hacemos nada
-                        if (err.name === 'AbortError') {
-                            return false;
-                        }
-                        console.warn('File System Access API falló, usando método alternativo:', err);
+                    } else {
+                        await writable.write(contenido);
                     }
+                    await writable.close();
+                    showToast('Archivo guardado', 'success');
+                    return true;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') {
+                        // Usuario canceló el diálogo
+                        return false;
+                    }
+                    console.warn('showSaveFilePicker no disponible o falló, usando descarga:', err);
                 }
-            } catch (e) {
-                // Si falla la API, usar el método tradicional
-                console.log('Usando método tradicional de descarga');
             }
 
-            // Fallback: método tradicional con click en enlace
-            return guardarConDialogo(contenido, nombreArchivo, tipoMIME);
+            // 2) Fallback: descarga con nombre sugerido
+            const ok = await guardarConDialogo(contenido, nombreArchivo, info.mime);
+            if (ok) {
+                showToast('Descarga iniciada', 'info');
+            }
+            return ok;
         }
 
-        function exportData() {
+        function resolveDocumentoPadreInfo(padreNom) {
+            const nom = String(padreNom || '').trim();
+            if (!nom) return { nomenclatura: '', nombre: '', etiqueta: '' };
+            const padre = (data.documents || []).find(d => String(d.nomenclatura || '').trim() === nom);
+            if (padre) {
+                const etiqueta = `${padre.nomenclatura} ${padre.nombre || ''}`.trim();
+                return { nomenclatura: padre.nomenclatura || nom, nombre: padre.nombre || '', etiqueta };
+            }
+            return { nomenclatura: nom, nombre: '', etiqueta: nom };
+        }
+
+        async function exportData() {
             if (!isManager) return;
-            const contenido = JSON.stringify(data, null, 2);
+            // JSON con información completa del documento padre asociado
+            const payload = {
+                ...data,
+                documents: (data.documents || []).map(doc => {
+                    const padreInfo = resolveDocumentoPadreInfo(doc.documentoPadre);
+                    return {
+                        ...doc,
+                        documentoPadre: doc.documentoPadre || '',
+                        documentoPadreNomenclatura: padreInfo.nomenclatura,
+                        documentoPadreNombre: padreInfo.nombre,
+                        documentoPadreEtiqueta: padreInfo.etiqueta
+                    };
+                }),
+                exportMeta: {
+                    exportedAt: new Date().toISOString(),
+                    totalDocuments: (data.documents || []).length,
+                    includesDocumentoPadre: true
+                }
+            };
+            const contenido = JSON.stringify(payload, null, 2);
             const nombreArchivo = `Matriz_Documental_${new Date().toISOString().slice(0,10)}.json`;
-            guardarConDialogoAvanzado(contenido, nombreArchivo, 'application/json');
+            await guardarConDialogoAvanzado(contenido, nombreArchivo, 'application/json');
         }
 
-        function exportToExcel() {
+        async function exportToExcel() {
             if (!isManager) return;
             const f = getFilteredData();
             if (f.length === 0) { showToast('No hay documentos para exportar', 'warning'); return; }
-            
+
             const headers = ['ID', 'Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área', 'Departamento',
                 'Tipo de Documento', 'Categoría', 'Clasificación', 'Versión', 'Fecha de Emisión (1a versión)',
                 'Fecha de última Actualización', 'Fecha de Autorización', 'Fecha de difusión', 'Hipervínculo',
-                'Comentarios', 'Estado'
+                'Comentarios', 'Estado', 'Documento Padre'
             ];
             let csv = '\uFEFF' + headers.join(',') + '\n';
             f.forEach(d => {
+                const padreInfo = resolveDocumentoPadreInfo(d.documentoPadre);
                 const row = [d.id, escapeCSVField(d.unidad || ''), escapeCSVField(d.nomenclatura || ''),
                     escapeCSVField(d.nombre || ''), escapeCSVField(d.macro || ''), escapeCSVField(d.area || ''),
                     escapeCSVField(d.departamento || ''), escapeCSVField(d.tipo || ''),
                     escapeCSVField(d.categoria || ''), escapeCSVField(d.clasificacion || ''), d.version || '',
                     d.fechaEmision || '', d.fechaActualizacion || '',
                     d.fechaAutorizacion || '', d.fechaDifusion || '', escapeCSVField(d.hipervinculo || ''),
-                    escapeCSVField(d.comentarios || ''), escapeCSVField(d.status || '')
+                    escapeCSVField(d.comentarios || ''), escapeCSVField(d.status || ''),
+                    escapeCSVField(padreInfo.etiqueta || '')
                 ];
                 csv += row.join(',') + '\n';
             });
             const nombreArchivo = `Matriz_Documental_${new Date().toISOString().slice(0,10)}.csv`;
-            guardarConDialogoAvanzado(csv, nombreArchivo, 'text/csv;charset=utf-8');
+            await guardarConDialogoAvanzado(csv, nombreArchivo, 'text/csv;charset=utf-8');
         }
 
-        function exportHistory() {
+        async function exportHistory() {
             if (!isManager) return;
             const lines = data.history.map(item =>
                 `[${new Date(item.timestamp).toLocaleString('es-ES')}] ${item.text}`).join('\n');
             const nombreArchivo = `historial_${new Date().toISOString().slice(0,10)}.txt`;
-            guardarConDialogoAvanzado(lines, nombreArchivo, 'text/plain');
+            await guardarConDialogoAvanzado(lines, nombreArchivo, 'text/plain');
         }
 
-        function downloadTemplate() {
+        async function downloadTemplate() {
             if (!isManager) return;
             const headers = ['Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área', 'Departamento',
                 'Tipo de Documento', 'Categoría', 'Clasificación', 'Versión', 'Fecha de Emisión (1a versión)',
@@ -5945,7 +6006,7 @@
             ];
             csv += example.map(escapeCSVField).join(',') + '\n';
             const nombreArchivo = 'plantilla_matriz_documental.csv';
-            guardarConDialogoAvanzado(csv, nombreArchivo, 'text/csv;charset=utf-8');
+            await guardarConDialogoAvanzado(csv, nombreArchivo, 'text/csv;charset=utf-8');
         }
 
         function importData(e) {
@@ -5957,7 +6018,17 @@
                 try {
                     const imp = JSON.parse(ev.target.result);
                     if (imp.documents !== undefined && imp.history !== undefined) {
-                        data = imp;
+                        if (Array.isArray(imp.documents)) {
+                            imp.documents = imp.documents.map(d => {
+                                const { documentoPadreNomenclatura, documentoPadreNombre, documentoPadreEtiqueta, ...rest } = d;
+                                return {
+                                    ...rest,
+                                    documentoPadre: rest.documentoPadre || documentoPadreNomenclatura || ''
+                                };
+                            });
+                        }
+                        delete imp.exportMeta;
+                        data = ensureCatalogs(imp);
                         reindexIds();
                         saveData(data);
                         renderAll();
