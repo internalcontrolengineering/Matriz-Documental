@@ -519,6 +519,7 @@
             max-width: 280px;
             display: none;
             margin-top: 0;
+            overscroll-behavior: contain;
         }
         .filter-dropdown.open {
             display: block;
@@ -544,6 +545,8 @@
             max-height: 160px;
             overflow-y: auto;
             padding: 4px 0;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
         .filter-dropdown .option-item {
             display: flex;
@@ -4014,6 +4017,7 @@
             dropdown.style.display = 'block';
             openDropdown = column;
             positionDropdown(column);
+            bindDropdownScrollGuard(dropdown);
 
             const baseData = getDataWithGeneralFilters();
             const filteredData = applyColumnFilters(baseData);
@@ -4196,6 +4200,7 @@
             dropdown.style.display = 'block';
             openDropdown = fullKey;
             positionGenDropdown(key);
+            bindDropdownScrollGuard(dropdown);
             const opts = getOptionsForGenFilter(key);
             const selected = generalFilters[key] || [];
             renderGenDropdownOptions(key, opts, selected);
@@ -5712,6 +5717,19 @@
         // ============================================================
         // Cerrar dropdown al hacer clic fuera / scroll / resize
         // ============================================================
+
+        function bindDropdownScrollGuard(dropdown) {
+            if (!dropdown || dropdown.dataset.scrollGuard === '1') return;
+            dropdown.dataset.scrollGuard = '1';
+            dropdown.addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: true });
+            dropdown.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+            const list = dropdown.querySelector('.options-list');
+            if (list) {
+                list.addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: true });
+                list.addEventListener('touchmove', function(e) { e.stopPropagation(); }, { passive: true });
+            }
+        }
+
         function closeAnyOpenDropdown() {
             if (!openDropdown) return;
             if (String(openDropdown).startsWith('gen-')) {
@@ -5741,11 +5759,42 @@
                 }
             }
         });
-        document.addEventListener('scroll', function() {
-            closeAnyOpenDropdown();
+        function getOpenFilterDropdownEl() {
+            if (!openDropdown) return null;
+            if (String(openDropdown).startsWith('gen-')) {
+                return document.getElementById('dropdown-gen-' + openDropdown.replace('gen-', ''));
+            }
+            return document.getElementById('dropdown-' + openDropdown);
+        }
+
+        function repositionOpenFilterDropdown() {
+            if (!openDropdown) return;
+            if (String(openDropdown).startsWith('gen-')) {
+                positionGenDropdown(openDropdown.replace('gen-', ''));
+            } else {
+                positionDropdown(openDropdown);
+            }
+        }
+
+        document.addEventListener('scroll', function(e) {
+            if (!openDropdown) return;
+            const dd = getOpenFilterDropdownEl();
+            const t = e.target;
+            // Scroll dentro del propio desplegable: no cerrar
+            if (dd && (t === dd || (t && dd.contains && dd.contains(t)) || (t && t.closest && t.closest('.filter-dropdown')))) {
+                return;
+            }
+            // Scroll del contenedor de tabla u otros: reposicionar
+            if (dd && dd.style.display === 'block') {
+                repositionOpenFilterDropdown();
+            }
         }, true);
         window.addEventListener('resize', function() {
-            closeAnyOpenDropdown();
+            if (!openDropdown) return;
+            const dd = getOpenFilterDropdownEl();
+            if (dd && dd.style.display === 'block') {
+                repositionOpenFilterDropdown();
+            }
         });
 
         // ============================================================
