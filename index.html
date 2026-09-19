@@ -3122,6 +3122,40 @@
             return [...years].sort();
         }
 
+        // ============================================================
+        // NORMALIZACIÓN DE NOMENCLATURAS
+        // Convierte variantes a una forma canónica para detectar duplicados:
+        //   CM-POP-CONTRA-01  →  CMPOPCONTRA01
+        //   CM-POP-CONTRA-01  →  CMPOPCONTRA01  (espacio final)
+        //   CM- POP-CONTRA-01 →  CMPOPCONTRA01  (espacio interno)
+        //   Cm-Pop-CONTRA-01  →  CMPOPCONTRA01  (mayúsculas/minúsculas)
+        //   CM-POP_CONTRA-01  →  CMPOPCONTRA01  (guion bajo)
+        //   CM POP CONTRA 01  →  CMPOPCONTRA01  (espacios como separador)
+        // ============================================================
+        function normalizarNomenclatura(nom) {
+            if (nom === null || nom === undefined) return '';
+            let s = String(nom);
+            // Quitar espacios al inicio/fin
+            s = s.trim();
+            // Colapsar espacios internos múltiples a uno solo
+            s = s.replace(/\s+/g, '');
+            // Convertir a mayúsculas
+            s = s.toUpperCase();
+            // Unificar separadores: guiones, guiones bajos, puntos, barras → nada
+            // (los separadores se eliminan para comparar solo caracteres alfanuméricos)
+            s = s.replace(/[-_.\/\\|:;,]+/g, '');
+            // Eliminar cualquier otro carácter que no sea letra o número
+            s = s.replace(/[^A-Z0-9]/g, '');
+            return s;
+        }
+
+        // Compara dos nomenclaturas normalizadas
+        function sonNomenclaturasEquivalentes(a, b) {
+            const na = normalizarNomenclatura(a);
+            const nb = normalizarNomenclatura(b);
+            return na !== '' && na === nb;
+        }
+
         function validateDocument(doc, isEdit) {
             const labels = { unidad: 'Unidad', nomenclatura: 'Nomenclatura', nombre: 'Nombre', macro: 'Macroproceso',
                 area: 'Área', departamento: 'Departamento', tipo: 'Tipo', categoria: 'Categoría',
@@ -3137,11 +3171,17 @@
                     return false;
                 }
             }
-            // Nomenclatura siempre se valida por duplicado si tiene valor
+            // Nomenclatura: validar duplicado con comparación normalizada
             if (doc.nomenclatura) {
-                const dup = data.documents.some(d => d.nomenclatura === doc.nomenclatura && (isEdit ? d.id !== doc.id : true));
+                const dup = data.documents.find(d =>
+                    sonNomenclaturasEquivalentes(d.nomenclatura, doc.nomenclatura) &&
+                    (isEdit ? d.id !== doc.id : true)
+                );
                 if (dup) {
-                    showToast(`La nomenclatura "${doc.nomenclatura}" ya existe`, 'warning');
+                    showToast(
+                        `La nomenclatura "${doc.nomenclatura}" ya existe (registrada como "${dup.nomenclatura}")`,
+                        'warning'
+                    );
                     return false;
                 }
             }
@@ -5267,14 +5307,20 @@
         function parseNomenclatura(nom) {
             const s = String(nom || '').trim();
             if (!s) return null;
-            // Prefijo + número final (con ceros a la izquierda opcionales)
-            const m = s.match(/^(.*?)(\d+)$/);
-            if (!m) return { prefix: s, num: null, pad: 0, raw: s };
+            // Normalizamos para trabajar con la forma canónica
+            const normalizada = normalizarNomenclatura(s);
+            // Buscamos el sufijo numérico al final de la forma normalizada
+            const m = normalizada.match(/^(.*?)(\d+)$/);
+            if (!m) {
+                // Sin sufijo numérico: usamos el prefijo completo normalizado
+                return { prefix: normalizada, num: null, pad: 0, raw: s, normalizada };
+            }
             return {
                 prefix: m[1],
                 num: parseInt(m[2], 10),
                 pad: m[2].length,
-                raw: s
+                raw: s,
+                normalizada
             };
         }
 
@@ -5282,11 +5328,10 @@
             const used = new Set();
             const docs = (data && data.documents) ? data.documents : [];
             docs.forEach(d => {
-                const n = String(d.nomenclatura || '').trim();
-                if (!n) return;
-                // Coincidencia exacta de prefijo (case-sensitive para nomenclaturas)
-                if (n.startsWith(prefix)) {
-                    const rest = n.slice(prefix.length);
+                const normalizada = normalizarNomenclatura(d.nomenclatura);
+                if (!normalizada) return;
+                if (normalizada.startsWith(prefix)) {
+                    const rest = normalizada.slice(prefix.length);
                     if (/^\d+$/.test(rest)) {
                         used.add(parseInt(rest, 10));
                     }
@@ -5299,7 +5344,11 @@
             const exact = String(nom || '').trim();
             const parsed = parseNomenclatura(exact);
             const docs = (data && data.documents) ? data.documents : [];
-            const exactMatch = docs.find(d => String(d.nomenclatura || '').trim() === exact);
+
+            // Detección de duplicado por comparación NORMALIZADA
+            const exactMatch = docs.find(d =>
+                sonNomenclaturasEquivalentes(d.nomenclatura, exact)
+            );
             const exists = !!exactMatch;
 
             if (!parsed || parsed.num === null) {
@@ -5307,7 +5356,6 @@
             }
 
             const used = getUsedNumbersForPrefix(parsed.prefix);
-            // Asegurar que el número exacto cuente si existe con ese código
             if (exists) used.add(parsed.num);
 
             const suggestions = [];
@@ -5318,7 +5366,8 @@
             while (suggestions.length < count && candidate <= limit) {
                 if (!used.has(candidate)) {
                     const code = parsed.prefix + String(candidate).padStart(parsed.pad, '0');
-                    if (code !== exact) {
+                    // Evitar sugerir algo equivalente a la nomenclatura consultada
+                    if (!sonNomenclaturasEquivalentes(code, exact)) {
                         suggestions.push(code);
                     }
                 }
@@ -5368,7 +5417,10 @@
             }
 
             const { parsed, exists, suggestions } = findAvailableNomenclatures(nom, 3);
-            const exactMatch = (data.documents || []).find(d => String(d.nomenclatura || '').trim() === nom);
+            // Búsqueda normalizada del documento existente
+            const exactMatch = (data.documents || []).find(d =>
+                sonNomenclaturasEquivalentes(d.nomenclatura, nom)
+            );
 
             if (parsed.num === null) {
                 // Sin número final
@@ -5377,7 +5429,7 @@
                     result.innerHTML = `
                         <div style="margin-bottom:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:#fee2e2;color:#991b1b;font-weight:700;font-size:10px;">OCUPADA</span></div>
                         <div style="font-family:monospace;font-weight:600;margin-bottom:4px;">${nom}</div>
-                        <div style="color:var(--text-secondary);font-size:10px;">Ya existe en la matriz${exactMatch ? ` · ${exactMatch.nombre || ''}` : ''}.</div>
+                        <div style="color:var(--text-secondary);font-size:10px;">Ya existe en la matriz${exactMatch ? ` · ${exactMatch.nombre || ''}` : ''} (registrada como "${exactMatch ? exactMatch.nomenclatura : ''}").</div>
                         <div style="margin-top:8px;color:var(--text-secondary);font-size:10px;">No se detectó un sufijo numérico para sugerir alternativas (ej. …-01).</div>`;
                 } else {
                     result.style.borderColor = 'var(--green)';
@@ -5401,7 +5453,7 @@
                 result.innerHTML = `
                     <div style="margin-bottom:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:20px;background:#fee2e2;color:#991b1b;font-weight:700;font-size:10px;">OCUPADA</span></div>
                     <div style="font-family:monospace;font-weight:600;margin-bottom:2px;">${nom}</div>
-                    <div style="color:var(--text-secondary);font-size:10px;">${exactMatch ? (exactMatch.nombre || 'Documento existente') : 'Ya registrada en la matriz'}.</div>
+                    <div style="color:var(--text-secondary);font-size:10px;">Equivale a "${exactMatch ? exactMatch.nomenclatura : 'documento existente'}"${exactMatch ? ' · ' + (exactMatch.nombre || '') : ''}.</div>
                     ${sugHtml}`;
             } else {
                 const sugHtml = suggestions.length
@@ -5675,15 +5727,21 @@
                             return;
                         }
                     }
-                    const existing = new Set(data.documents.map(d => d.nomenclatura));
+                    // Duplicados por nomenclatura NORMALIZADA
+                    const existingNorm = new Set(
+                        data.documents.map(d => normalizarNomenclatura(d.nomenclatura)).filter(Boolean)
+                    );
+                    const batchNorm = new Set();
                     batchData = [];
                     let duplicates = [];
                     for (let i = 1; i < lines.length; i++) {
                         const vals = parseCSVLine(lines[i]);
                         while (vals.length < 17) vals.push('');
                         const nom = vals[map[1]] || 'DOC-';
-                        if (existing.has(nom) || batchData.some(d => d.nomenclatura === nom)) { duplicates.push(
+                        const nomNorm = normalizarNomenclatura(nom);
+                        if (existingNorm.has(nomNorm) || batchNorm.has(nomNorm)) { duplicates.push(
                             nom); continue; }
+                        batchNorm.add(nomNorm);
                         const tipo = vals[map[6]] || 'Sin tipo';
                         const cat = getCategoriaByTipo(tipo);
                         const doc = {
@@ -5809,10 +5867,6 @@
             document.getElementById('duplicateWarning').style.display = 'none';
             batchData = [];
             document.getElementById('batchFile').value = ''; }
-
-        // ============================================================
-        // EXPORT / IMPORT / TEMPLATE - CON DIÁLOGO "GUARDAR COMO"
-        // ============================================================
 
         // ============================================================
         // EXPORT / IMPORT / TEMPLATE - CON DIÁLOGO "GUARDAR COMO"
