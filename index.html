@@ -816,6 +816,121 @@
             cursor: default;
         }
         .cs-option.cs-empty:hover { background: transparent; }
+
+        /* Combo buscable: Documento 1er / 2o nivel */
+        .padre-combo {
+            position: relative;
+            width: 100%;
+        }
+        .padre-combo-btn {
+            width: 100%;
+            padding: 5px 28px 5px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 10px;
+            text-align: left;
+            cursor: pointer;
+            outline: none;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .padre-combo-btn::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid var(--text-secondary);
+        }
+        .padre-combo-btn.open::after {
+            border-top: none;
+            border-bottom: 5px solid var(--text-secondary);
+        }
+        .padre-combo-btn.placeholder {
+            color: var(--text-secondary);
+        }
+        .padre-combo-btn.required-field.valid {
+            border-color: var(--valid-color) !important;
+            box-shadow: 0 0 0 3px var(--valid-shadow) !important;
+        }
+        .padre-combo-btn.required-field.invalid {
+            border-color: var(--invalid-color) !important;
+            box-shadow: 0 0 0 3px var(--invalid-shadow) !important;
+        }
+        .padre-combo-dd {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 3px);
+            z-index: 10060;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+            max-height: 240px;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        .padre-combo-dd.open {
+            display: flex;
+        }
+        .padre-combo-search {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .padre-combo-search input {
+            width: 100%;
+            padding: 5px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 10px;
+            outline: none;
+        }
+        .padre-combo-search input:focus {
+            border-color: var(--blue);
+        }
+        .padre-combo-list {
+            overflow-y: auto;
+            max-height: 190px;
+            overscroll-behavior: contain;
+            padding: 4px 0;
+        }
+        .padre-combo-item {
+            padding: 6px 10px;
+            font-size: 10px;
+            cursor: pointer;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+        .padre-combo-item:hover,
+        .padre-combo-item.active {
+            background: var(--filter-active-bg);
+            color: var(--blue);
+        }
+        .padre-combo-item .padre-nom {
+            font-family: monospace;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .padre-combo-item .padre-name {
+            color: var(--text-secondary);
+        }
+        .padre-combo-empty {
+            padding: 10px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
         .modal .form-grid-modal input,
         .modal .form-grid-modal textarea {
             width: 100%;
@@ -2101,7 +2216,7 @@
                     <button class="btn btn-primary manager-only" onclick="openAddModal()"><i class="fas fa-plus"></i> Agregar</button>
                 </div>
                 <div class="matriz-search">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar por Nomenclatura o Nombre..." oninput="renderAll()">
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye padre e hijos)..." oninput="renderAll()">
                     <button class="search-clear" onclick="document.getElementById('searchInput').value=''; renderAll();" title="Limpiar búsqueda"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="filtros-generales" id="filtrosGenerales">
@@ -2298,7 +2413,20 @@
                 <div><label>Macroproceso <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mMacro" class="required-field" onchange="validateField(this)"></select><button class="btn-add" onclick="addNewOption('mMacro', 'Nuevo Macroproceso')">+</button></div></div>
                 <div><label>Área <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mArea" class="required-field" onchange="validateField(this)"></select><button class="btn-add" onclick="addNewOption('mArea', 'Nueva Área')">+</button></div></div>
                 <div><label>Departamento <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mDepartamento" class="required-field" onchange="validateField(this)"></select><button class="btn-add" onclick="addNewOption('mDepartamento', 'Nuevo Departamento')">+</button></div></div>
-                <div><label>Tipo de Documento <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mTipo" class="required-field" onchange="validateField(this); autoSetCategoria();"></select><button class="btn-add" onclick="addNewOption('mTipo', 'Nuevo Tipo')">+</button></div></div>
+                <div><label>Tipo de Documento <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mTipo" class="required-field" onchange="validateField(this); autoSetCategoria(); onTipoChangeForPadre();"></select><button class="btn-add" onclick="addNewOption('mTipo', 'Nuevo Tipo')">+</button></div></div>
+                <div id="wrapDocPadre" style="display:none;">
+                    <label>Documento 1er / 2o nivel</label>
+                    <div class="padre-combo" id="padreCombo">
+                        <input type="hidden" id="mDocPadre" value="">
+                        <button type="button" class="padre-combo-btn placeholder" id="mDocPadreBtn" onclick="togglePadreCombo(event)">— Sin documento padre —</button>
+                        <div class="padre-combo-dd" id="mDocPadreDropdown">
+                            <div class="padre-combo-search">
+                                <input type="text" id="mDocPadreSearch" placeholder="🔍 Buscar nomenclatura o nombre..." oninput="filterPadreComboOptions(this.value)" onclick="event.stopPropagation()" autocomplete="off">
+                            </div>
+                            <div class="padre-combo-list" id="mDocPadreOptions"></div>
+                        </div>
+                    </div>
+                </div>
                 <div><label>Categoría <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mCategoria" class="required-field" onchange="validateField(this)"></select><button class="btn-add" onclick="addNewOption('mCategoria', 'Nueva Categoría')">+</button></div></div>
                 <div><label>Clasificación <span style="color:var(--red);">*</span></label><div class="select-with-add"><select id="mClasificacion" class="required-field" onchange="validateField(this)"></select><button class="btn-add" onclick="addNewOption('mClasificacion', 'Nueva Clasificación')">+</button></div></div>
                 <div><label>Versión <span style="color:var(--red);">*</span></label><input type="number" id="mVersion" value="" step="1" min="1" placeholder="Ingrese Versión" class="required-field" oninput="validateField(this)"></div>
@@ -2903,9 +3031,18 @@
         const STORAGE_KEY = 'matriz_documental_v38';
         let data = null;
 
-        const TIPOS_DOCUMENTO = ['Anexo', 'Ayuda Visual', 'Bitácora', 'Catálogo', 'Comunicado', 'Formato', 'Guía Operativa',
+        const TIPOS_DOCUMENTO = ['Anexo', 'Ayuda Visual', 'Bitácora', 'Catálogo', 'Comunicado', 'Formato', 'Guía', 'Guía Operativa',
             'Hoja de Verificación', 'Instructivo de Llenado', 'Instrucción de Operación', 'Listado', 'Manual Técnico',
             'Plan', 'Política', 'Procedimiento', 'PyLG', 'Registro'
+        ];
+        // Tipos de 3er nivel / soporte: pueden vincularse a un documento de 1er o 2o nivel
+        const TIPOS_CON_DOC_PADRE = [
+            'Anexo', 'Ayuda Visual', 'Bitácora', 'Catálogo', 'Comunicado', 'Formato', 'Guía',
+            'Hoja de Verificación', 'Instrucción de Operación', 'Instructivo de Llenado', 'Listado', 'Registro'
+        ];
+        // Tipos de 1er / 2o nivel que aparecen como opciones de documento padre
+        const TIPOS_DOC_PADRE = [
+            'Guía Operativa', 'Manual Técnico', 'Plan', 'Política', 'Procedimiento', 'PyLG'
         ];
         const CHART_COLORS = { estado: ['#6c8ebf', '#8fb5a8', '#d4a78c', '#f97316', '#b89bc7'], categoria: ['#8fb5d4', '#c7b88a',
                 '#8cc7b8'
@@ -2958,9 +3095,13 @@
 
         function validateAllFields() {
             let all = true;
-            // Solo validar campos marcados como obligatorios según config
+            const tipo = (document.getElementById('mTipo')?.value || '').trim();
             ALL_FORM_FIELDS.forEach(f => {
                 if (!requiredFieldsConfig.includes(f.key)) return;
+                // documentoPadre solo se valida si el tipo lo requiere y está visible
+                if (f.key === 'documentoPadre') {
+                    if (!needsDocumentoPadre(tipo)) return;
+                }
                 const el = document.getElementById(f.el);
                 if (el && !validateField(el)) all = false;
             });
@@ -2986,9 +3127,11 @@
                 area: 'Área', departamento: 'Departamento', tipo: 'Tipo', categoria: 'Categoría',
                 clasificacion: 'Clasificación', version: 'Versión', fechaEmision: 'Fecha Emisión',
                 fechaActualizacion: 'Fecha Actualización', fechaAutorizacion: 'Fecha Autorización',
-                fechaDifusion: 'Fecha Difusión', hipervinculo: 'Hipervínculo', status: 'Estado' };
+                fechaDifusion: 'Fecha Difusión', hipervinculo: 'Hipervínculo', status: 'Estado',
+                documentoPadre: 'Documento 1er / 2o nivel' };
             // Solo exigir campos configurados como obligatorios
             for (const f of requiredFieldsConfig) {
+                if (f === 'documentoPadre' && !needsDocumentoPadre(doc.tipo)) continue;
                 if (!doc[f] || doc[f].toString().trim() === '') {
                     showToast(`El campo "${labels[f] || f}" es obligatorio`, 'warning');
                     return false;
@@ -3059,7 +3202,8 @@
                     fechaDifusion: d.fecha_difusion || '',
                     hipervinculo: d.hipervinculo || '',
                     comentarios: d.comentarios || '',
-                    status: d.status || 'Nuevo'
+                    status: d.status || 'Nuevo',
+                    documentoPadre: d.documento_padre || d.documentoPadre || ''
                 }));
 
                 const history = (histRes.data || []).map(h => ({
@@ -3133,9 +3277,16 @@
                         fecha_difusion: doc.fechaDifusion || '',
                         hipervinculo: doc.hipervinculo || '',
                         comentarios: doc.comentarios || '',
-                        status: doc.status || 'Nuevo'
+                        status: doc.status || 'Nuevo',
+                        documento_padre: doc.documentoPadre || ''
                     }));
-                    const { error } = await supabaseClient.from('documents').insert(docsToInsert);
+                    let { error } = await supabaseClient.from('documents').insert(docsToInsert);
+                    // Si la columna documento_padre no existe aún, reintentar sin ella
+                    if (error && /documento_padre/i.test(error.message || '')) {
+                        const withoutPadre = docsToInsert.map(({ documento_padre, ...rest }) => rest);
+                        const retry = await supabaseClient.from('documents').insert(withoutPadre);
+                        error = retry.error;
+                    }
                     if (error) throw error;
                 }
 
@@ -3504,10 +3655,11 @@
             { key: 'fechaAutorizacion', label: 'Fecha de Autorización', el: 'mFechaAutorizacion' },
             { key: 'fechaDifusion', label: 'Fecha de difusión', el: 'mFechaDifusion' },
             { key: 'hipervinculo', label: 'Hipervínculo', el: 'mHipervinculo' },
-            { key: 'status', label: 'Estado', el: 'mStatus' }
+            { key: 'status', label: 'Estado', el: 'mStatus' },
+            { key: 'documentoPadre', label: 'Documento 1er / 2o nivel', el: 'mDocPadre' }
         ];
-        // Por defecto todos obligatorios (comportamiento original)
-        let requiredFieldsConfig = ALL_FORM_FIELDS.map(f => f.key);
+        // Por defecto todos obligatorios excepto documentoPadre (opcional)
+        let requiredFieldsConfig = ALL_FORM_FIELDS.map(f => f.key).filter(k => k !== 'documentoPadre');
 
         function loadRequiredFieldsLocal() {
             try {
@@ -3517,7 +3669,7 @@
                     if (Array.isArray(arr)) return arr;
                 }
             } catch(e) {}
-            return ALL_FORM_FIELDS.map(f => f.key);
+            return ALL_FORM_FIELDS.map(f => f.key).filter(k => k !== 'documentoPadre');
         }
 
         function saveRequiredFieldsLocal(arr) {
@@ -3577,10 +3729,17 @@
                 const label = wrap.querySelector('label');
                 if (!label) return;
                 const isReq = requiredFieldsConfig.includes(f.key);
-                // Quitar * previos y volver a poner si aplica
-                let text = label.innerHTML.replace(/\s*<span[^>]*>\*<\/span>/g, '').replace(/\s*\*$/, '').trim();
-                // Also strip plain * at end of text content patterns
                 const baseLabel = f.label;
+                if (f.key === 'documentoPadre') {
+                    if (isReq) {
+                        label.innerHTML = baseLabel + ' <span style="color:var(--red);">*</span>';
+                        el.classList.add('required-field');
+                    } else {
+                        label.innerHTML = baseLabel + ' <span style="font-weight:400;color:var(--text-secondary);">(opcional)</span>';
+                        el.classList.remove('required-field', 'valid', 'invalid');
+                    }
+                    return;
+                }
                 if (isReq) {
                     label.innerHTML = baseLabel + ' <span style="color:var(--red);">*</span>';
                     el.classList.add('required-field');
@@ -3879,9 +4038,47 @@
             const base = getDataWithGeneralFilters();
             let filtered = applyColumnFilters(base);
             const search = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
-            if (search) filtered = filtered.filter(d => d.nomenclatura.toLowerCase().includes(search) || d.nombre
-                .toLowerCase().includes(search));
-            return filtered;
+            if (!search) return filtered;
+
+            const matched = filtered.filter(d =>
+                (d.nomenclatura || '').toLowerCase().includes(search) ||
+                (d.nombre || '').toLowerCase().includes(search)
+            );
+            if (matched.length === 0) return [];
+
+            const byNom = new Map();
+            (data.documents || []).forEach(d => {
+                if (d.nomenclatura) byNom.set(String(d.nomenclatura).trim(), d);
+            });
+
+            const includeNoms = new Set();
+            matched.forEach(d => {
+                const nom = String(d.nomenclatura || '').trim();
+                if (nom) includeNoms.add(nom);
+                // Padre
+                const padreNom = String(d.documentoPadre || '').trim();
+                if (padreNom) {
+                    includeNoms.add(padreNom);
+                    // Hermanos (mismo padre)
+                    (data.documents || []).forEach(sib => {
+                        if (String(sib.documentoPadre || '').trim() === padreNom && sib.nomenclatura) {
+                            includeNoms.add(String(sib.nomenclatura).trim());
+                        }
+                    });
+                }
+                // Hijos de este documento
+                (data.documents || []).forEach(child => {
+                    if (String(child.documentoPadre || '').trim() === nom && child.nomenclatura) {
+                        includeNoms.add(String(child.nomenclatura).trim());
+                    }
+                });
+            });
+
+            // Familia dentro de los filtros generales/columna aplicados al universo
+            const family = applyColumnFilters(
+                getDataWithGeneralFilters().filter(d => includeNoms.has(String(d.nomenclatura || '').trim()))
+            );
+            return family.length > 0 ? family : matched;
         }
 
         // ============================================================
@@ -4366,6 +4563,7 @@
             clearModalForm();
             populateModalSelects();
             applyRequiredFieldMarkers();
+            onTipoChangeForPadre();
             document.getElementById('docModal').classList.add('active'); }
 
         function openEditModal(id) {
@@ -4394,6 +4592,9 @@
             document.getElementById('mComentarios').value = doc.comentarios || '';
             document.getElementById('mStatus').value = doc.status || '';
             applyRequiredFieldMarkers();
+            // Documento padre (1er / 2o nivel)
+            onTipoChangeForPadre();
+            populateDocumentoPadreSelect(doc.documentoPadre || '');
             document.getElementById('docModal').classList.add('active');
             setTimeout(() => { document.querySelectorAll('.required-field').forEach(f => validateField(f)); }, 100);
         }
@@ -4425,7 +4626,10 @@
                 fechaDifusion: document.getElementById('mFechaDifusion').value,
                 hipervinculo: document.getElementById('mHipervinculo').value.trim(),
                 comentarios: document.getElementById('mComentarios').value.trim() || '',
-                status: document.getElementById('mStatus').value.trim()
+                status: document.getElementById('mStatus').value.trim(),
+                documentoPadre: needsDocumentoPadre(tipo)
+                    ? (document.getElementById('mDocPadre')?.value || '').trim()
+                    : ''
             };
             if (!validateDocument(doc, editingId !== null)) return;
 
@@ -4522,11 +4726,22 @@
 
         function clearModalForm() {
             ['mUnidad', 'mNomenclatura', 'mNombre', 'mMacro', 'mArea', 'mDepartamento', 'mTipo', 'mCategoria', 'mClasificacion',
-                'mVersion', 'mComentarios', 'mHipervinculo', 'mStatus'
-            ].forEach(id => { document.getElementById(id).value = ''; });
-            ['mFechaEmision', 'mFechaActualizacion', 'mFechaAutorizacion', 'mFechaDifusion'].forEach(id => { document
-                    .getElementById(id).value = ''; });
+                'mVersion', 'mComentarios', 'mHipervinculo', 'mStatus', 'mDocPadre'
+            ].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            ['mFechaEmision', 'mFechaActualizacion', 'mFechaAutorizacion', 'mFechaDifusion'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            const wrap = document.getElementById('wrapDocPadre');
+            if (wrap) wrap.style.display = 'none';
+            if (typeof setPadreComboValue === 'function') setPadreComboValue('', '');
+            if (typeof closePadreCombo === 'function') closePadreCombo();
             document.querySelectorAll('.required-field').forEach(f => f.classList.remove('valid', 'invalid'));
+            const btn = document.getElementById('mDocPadreBtn');
+            if (btn) btn.classList.remove('required-field', 'valid', 'invalid');
         }
 
         function getCatalogOptions(fieldKey, baseList) {
@@ -4550,7 +4765,10 @@
             populateSelect('mCategoria', getCatalogOptions('categoria', CATEGORIAS), '');
             populateSelect('mClasificacion', getCatalogOptions('clasificacion', CLASIFICACIONES), '');
             populateSelect('mStatus', getCatalogOptions('status', ESTADOS), '');
-            setTimeout(autoSetCategoria, 50);
+            setTimeout(() => {
+                autoSetCategoria();
+                onTipoChangeForPadre();
+            }, 50);
             setTimeout(() => { document.querySelectorAll('.required-field').forEach(f => validateField(f)); }, 100);
         }
 
@@ -4670,7 +4888,8 @@
                     const decoded = v.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&amp;/g, '&');
                     sel.value = decoded;
                     validateField(sel);
-                    if (selectId === 'mTipo') autoSetCategoria();
+                    if (selectId === 'mTipo') { autoSetCategoria(); onTipoChangeForPadre(); }
+                    try { sel.dispatchEvent(new Event('change', { bubbles: true })); } catch (err) {}
                     closeCustomSelectDropdown();
                 });
                 if (delBtn) {
@@ -4805,7 +5024,7 @@
                 if (existsInSelect) {
                     sel.value = trimmed;
                     validateField(sel);
-                    if (selectId === 'mTipo') autoSetCategoria();
+                    if (selectId === 'mTipo') { autoSetCategoria(); onTipoChangeForPadre(); }
                 }
                 return;
             }
@@ -4834,7 +5053,10 @@
                 const el = document.getElementById(id);
                 if (el && currentSelections[id]) el.value = currentSelections[id];
             });
-            if (selectId === 'mTipo') autoSetCategoria();
+            if (selectId === 'mTipo') {
+                autoSetCategoria();
+                onTipoChangeForPadre();
+            }
             validateField(sel);
 
             data.history.push({
@@ -4858,6 +5080,180 @@
             validateField(catSel);
         }
 
+        function needsDocumentoPadre(tipo) {
+            if (!tipo) return false;
+            const t = String(tipo).trim().toLowerCase();
+            return TIPOS_CON_DOC_PADRE.some(x => x.toLowerCase() === t);
+        }
+
+        function getParentDocumentOptions(excludeNomenclatura) {
+            const docs = (data && data.documents) ? data.documents : [];
+            const parentSet = new Set(TIPOS_DOC_PADRE.map(x => x.toLowerCase()));
+            return docs
+                .filter(d => {
+                    if (!d.tipo || !parentSet.has(String(d.tipo).trim().toLowerCase())) return false;
+                    if (excludeNomenclatura && d.nomenclatura === excludeNomenclatura) return false;
+                    if (d.status === 'Eliminado') return false;
+                    return true;
+                })
+                .sort((a, b) => String(a.nomenclatura).localeCompare(String(b.nomenclatura), 'es'))
+                .map(d => ({
+                    value: d.nomenclatura,
+                    nombre: d.nombre || '',
+                    label: `${d.nomenclatura} ${d.nombre || ''}`.trim()
+                }));
+        }
+
+        let _padreComboOpts = [];
+
+        function setPadreComboValue(value, label) {
+            const hidden = document.getElementById('mDocPadre');
+            const btn = document.getElementById('mDocPadreBtn');
+            if (!hidden || !btn) return;
+            hidden.value = value || '';
+            if (value) {
+                btn.textContent = label || value;
+                btn.classList.remove('placeholder');
+            } else {
+                btn.textContent = '— Sin documento padre —';
+                btn.classList.add('placeholder');
+            }
+            // Validación visual también en el botón
+            if (hidden.classList.contains('required-field')) {
+                btn.classList.add('required-field');
+                validateField(hidden);
+                btn.classList.toggle('valid', hidden.classList.contains('valid'));
+                btn.classList.toggle('invalid', hidden.classList.contains('invalid'));
+            } else {
+                btn.classList.remove('required-field', 'valid', 'invalid');
+                hidden.classList.remove('valid', 'invalid');
+            }
+        }
+
+        function renderPadreComboOptions(filterText) {
+            const list = document.getElementById('mDocPadreOptions');
+            if (!list) return;
+            const q = (filterText || '').toLowerCase().trim();
+            const current = document.getElementById('mDocPadre')?.value || '';
+            let opts = _padreComboOpts.slice();
+            if (q) {
+                opts = opts.filter(o =>
+                    o.label.toLowerCase().includes(q) ||
+                    o.value.toLowerCase().includes(q) ||
+                    (o.nombre || '').toLowerCase().includes(q)
+                );
+            }
+            let html = `<div class="padre-combo-item${current === '' ? ' active' : ''}" data-value="" data-label="">
+                <span class="padre-name">— Sin documento padre —</span>
+            </div>`;
+            if (opts.length === 0) {
+                html += '<div class="padre-combo-empty">Sin resultados</div>';
+            } else {
+                html += opts.map(o => {
+                    const active = o.value === current ? ' active' : '';
+                    const safeVal = String(o.value).replace(/"/g, '&quot;');
+                    const safeLabel = String(o.label).replace(/"/g, '&quot;');
+                    return `<div class="padre-combo-item${active}" data-value="${safeVal}" data-label="${safeLabel}">
+                        <span class="padre-nom">${o.value}</span><span class="padre-name">${o.nombre || ''}</span>
+                    </div>`;
+                }).join('');
+            }
+            list.innerHTML = html;
+            list.querySelectorAll('.padre-combo-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const v = item.getAttribute('data-value') || '';
+                    const lab = item.getAttribute('data-label') || '';
+                    setPadreComboValue(v, lab || (v ? v : ''));
+                    closePadreCombo();
+                });
+            });
+        }
+
+        function filterPadreComboOptions(text) {
+            renderPadreComboOptions(text);
+        }
+
+        function togglePadreCombo(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            const dd = document.getElementById('mDocPadreDropdown');
+            const btn = document.getElementById('mDocPadreBtn');
+            if (!dd) return;
+            if (dd.classList.contains('open')) {
+                closePadreCombo();
+                return;
+            }
+            // Cerrar otros desplegables custom
+            if (typeof closeCustomSelectDropdown === 'function') closeCustomSelectDropdown();
+            dd.classList.add('open');
+            if (btn) btn.classList.add('open');
+            const search = document.getElementById('mDocPadreSearch');
+            if (search) {
+                search.value = '';
+                setTimeout(() => search.focus(), 30);
+            }
+            renderPadreComboOptions('');
+        }
+
+        function closePadreCombo() {
+            const dd = document.getElementById('mDocPadreDropdown');
+            const btn = document.getElementById('mDocPadreBtn');
+            if (dd) dd.classList.remove('open');
+            if (btn) btn.classList.remove('open');
+        }
+
+        function populateDocumentoPadreSelect(selectedValue) {
+            const hidden = document.getElementById('mDocPadre');
+            if (!hidden) return;
+            const currentNom = document.getElementById('mNomenclatura')?.value?.trim() || '';
+            const opts = getParentDocumentOptions(currentNom);
+            _padreComboOpts = opts.map(o => {
+                const nombre = (o.label || '').replace(o.value, '').trim();
+                return { value: o.value, label: o.label, nombre: nombre };
+            });
+            const keep = selectedValue !== undefined ? selectedValue : hidden.value;
+            let label = '';
+            if (keep) {
+                const found = _padreComboOpts.find(o => o.value === keep);
+                label = found ? found.label : keep;
+            }
+            setPadreComboValue(keep && _padreComboOpts.some(o => o.value === keep) ? keep : '', label);
+            closePadreCombo();
+        }
+
+        function onTipoChangeForPadre() {
+            const tipo = (document.getElementById('mTipo')?.value || '').trim();
+            const wrap = document.getElementById('wrapDocPadre');
+            if (!wrap) return;
+            if (needsDocumentoPadre(tipo)) {
+                wrap.style.display = 'block';
+                populateDocumentoPadreSelect();
+                const el = document.getElementById('mDocPadre');
+                const btn = document.getElementById('mDocPadreBtn');
+                const label = wrap.querySelector('label');
+                if (el && label) {
+                    const isReq = requiredFieldsConfig.includes('documentoPadre');
+                    if (isReq) {
+                        label.innerHTML = 'Documento 1er / 2o nivel <span style="color:var(--red);">*</span>';
+                        el.classList.add('required-field');
+                        if (btn) btn.classList.add('required-field');
+                    } else {
+                        label.innerHTML = 'Documento 1er / 2o nivel <span style="font-weight:400;color:var(--text-secondary);">(opcional)</span>';
+                        el.classList.remove('required-field', 'valid', 'invalid');
+                        if (btn) btn.classList.remove('required-field', 'valid', 'invalid');
+                    }
+                }
+            } else {
+                wrap.style.display = 'none';
+                closePadreCombo();
+                setPadreComboValue('', '');
+                const el = document.getElementById('mDocPadre');
+                const btn = document.getElementById('mDocPadreBtn');
+                if (el) el.classList.remove('required-field', 'valid', 'invalid');
+                if (btn) btn.classList.remove('required-field', 'valid', 'invalid');
+            }
+        }
 
         // ============================================================
         // VERIFICAR NOMENCLATURA DUPLICADA
@@ -5806,7 +6202,7 @@
             if (modalOpen) {
                 ['mUnidad', 'mNomenclatura', 'mNombre', 'mMacro', 'mArea', 'mDepartamento', 'mTipo', 'mCategoria',
                     'mClasificacion', 'mVersion', 'mFechaEmision', 'mFechaActualizacion', 'mFechaAutorizacion',
-                    'mFechaDifusion', 'mHipervinculo', 'mComentarios', 'mStatus'
+                    'mFechaDifusion', 'mHipervinculo', 'mComentarios', 'mStatus', 'mDocPadre'
                 ].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) preserved[id] = el.value;
@@ -5833,6 +6229,8 @@
                         el.value = preserved[id];
                     }
                 });
+                onTipoChangeForPadre();
+                if (preserved.mDocPadre) populateDocumentoPadreSelect(preserved.mDocPadre);
                 setTimeout(() => {
                     document.querySelectorAll('#docModal .required-field').forEach(f => validateField(f));
                 }, 30);
@@ -5877,11 +6275,18 @@
         }
 
         document.addEventListener('click', function(e) {
-            if (!_openCustomSelect) return;
-            const dd = document.getElementById('cs-dd-' + _openCustomSelect);
-            const sel = document.getElementById(_openCustomSelect);
-            if (dd && !dd.contains(e.target) && sel && !sel.contains(e.target)) {
-                closeCustomSelectDropdown();
+            if (_openCustomSelect) {
+                const dd = document.getElementById('cs-dd-' + _openCustomSelect);
+                const sel = document.getElementById(_openCustomSelect);
+                if (dd && !dd.contains(e.target) && sel && !sel.contains(e.target)) {
+                    closeCustomSelectDropdown();
+                }
+            }
+            // Cerrar combo documento padre
+            const padreDd = document.getElementById('mDocPadreDropdown');
+            const padreCombo = document.getElementById('padreCombo');
+            if (padreDd && padreDd.classList.contains('open') && padreCombo && !padreCombo.contains(e.target)) {
+                closePadreCombo();
             }
         });
         // Cerrar solo si el scroll ocurre FUERA del desplegable (no al desplazarse dentro de la lista)
