@@ -2021,6 +2021,577 @@
             }
         }
 
+
+        /* ===== Selección múltiple y compartir ===== */
+        .th-acciones-row {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            flex-wrap: nowrap;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        .th-acciones-row .th-label {
+            flex-shrink: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 48px;
+        }
+        th.col-acciones {
+            overflow: hidden !important;
+            max-width: 100px;
+        }
+        .select-mode-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-size: 9px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .select-mode-toggle:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+            background: var(--filter-active-bg);
+        }
+        .select-mode-toggle.active {
+            background: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+        .share-btn-header {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 3px;
+            border-radius: 5px;
+            border: 1px solid #6366f1;
+            background: #6366f1;
+            color: white;
+            font-size: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .share-btn-header.visible {
+            display: inline-flex;
+        }
+        .share-btn-header:hover {
+            background: #4f46e5;
+        }
+        .share-btn-header #shareSelectCount {
+            font-size: 7px;
+            line-height: 1;
+            margin-left: 1px;
+        }
+        .row-select-cb {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--blue);
+            cursor: pointer;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .actions-cell .row-select-cb {
+            margin-right: 2px;
+        }
+        body.shared-view .manager-only,
+        body.shared-view .actions-cell,
+        body.shared-view #tabBatchBtn,
+        body.shared-view .filtros-actions .manager-only {
+            display: none !important;
+        }
+        body.shared-view th.col-shared-hidden,
+        body.shared-view td.col-shared-hidden {
+            display: none !important;
+        }
+        /* Gateway de acceso Consultor */
+        .access-gateway {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #2563eb 100%);
+            z-index: 5050;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .access-gateway-inner {
+            width: 100%;
+            max-width: 720px;
+            position: relative;
+            z-index: 2;
+        }
+        .access-gateway h2 {
+            color: white;
+            text-align: center;
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            margin-bottom: 6px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+        }
+        .access-gateway .sub {
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+        }
+        .gateway-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .gateway-grid .gateway-card {
+            width: 160px;
+            flex: 0 0 160px;
+        }
+        .gateway-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f0f6ff 100%);
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid rgba(37,99,235,0.2);
+            box-shadow: 0 12px 28px -8px rgba(0,0,0,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .gateway-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 32px -8px rgba(0,0,0,0.4);
+        }
+        .gateway-card.general {
+            border-color: rgba(22,163,74,0.35);
+        }
+        .gateway-card .gw-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            color: white;
+            font-size: 1.2rem;
+        }
+        .gateway-card.general .gw-icon {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+        }
+        .gateway-card.solicitud .gw-icon {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+        }
+        .gateway-card .gw-title {
+            font-weight: 700;
+            font-size: 13px;
+            color: #1e40af;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+        .gateway-card .gw-meta {
+            font-size: 10px;
+            color: #64748b;
+            line-height: 1.35;
+        }
+        .gateway-back {
+            margin-top: 18px;
+            text-align: center;
+        }
+        .gateway-back button {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .gateway-back button:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        .share-col-list {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 4px;
+            padding: 6px 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .share-col-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 6px;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+            line-height: 1.3;
+        }
+        .share-col-item:hover { background: var(--filter-active-bg); }
+        .share-col-item input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--blue);
+            cursor: pointer;
+            flex-shrink: 0;
+            margin: 0;
+        }
+        .share-col-item label {
+            flex: 1;
+            cursor: pointer;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: visible;
+            font-size: 11px;
+        }
+        .share-exp-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .share-exp-row select {
+            flex: 1;
+            min-width: 90px;
+            padding: 7px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 11px;
+            outline: none;
+            cursor: pointer;
+            height: 34px;
+        }
+        .num-stepper {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            overflow: hidden;
+            height: 34px;
+            flex-shrink: 0;
+        }
+        .num-stepper button {
+            width: 28px;
+            height: 34px;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+        .num-stepper button:hover {
+            background: var(--filter-active-bg);
+            color: var(--blue);
+        }
+        .num-stepper input[type="number"] {
+            width: 48px;
+            height: 34px;
+            border: none;
+            border-left: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-radius: 0;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 12px;
+            text-align: center;
+            outline: none;
+            -moz-appearance: textfield;
+            padding: 0;
+            margin: 0;
+        }
+        .num-stepper input[type="number"]::-webkit-outer-spin-button,
+        .num-stepper input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        #shareModal .num-stepper input,
+        #editSolModal .num-stepper input {
+            width: 48px !important;
+            height: 34px !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+        #shareModal .share-col-list,
+        #editSolModal .edit-docs-list {
+            color: var(--text-primary);
+        }
+
+        .sol-manage-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            position: relative;
+        }
+        .sol-manage-item .sol-name-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sol-manage-item .sol-name {
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--text-primary);
+            flex: 1;
+        }
+        .sol-manage-item .sol-edit-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--blue);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .sol-manage-item .sol-edit-btn:hover {
+            background: var(--filter-active-bg);
+            border-color: var(--blue);
+        }
+        .sol-manage-item .sol-meta {
+            font-size: 10px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        #editSolModal .modal {
+            max-width: min(480px, calc(100vw - 24px));
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        #editSolModal .form-grid-modal {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        #editSolModal .form-grid-modal > div {
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        #editSolModal input[type="text"],
+        #editSolModal input[type="password"],
+        #editSolModal textarea {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        #editSolModal .share-exp-row {
+            flex-wrap: wrap;
+            max-width: 100%;
+        }
+        #editSolModal .share-exp-row select {
+            min-width: 0;
+            flex: 1 1 100px;
+        }
+        #editSolModal .share-col-list {
+            max-width: 100%;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .edit-docs-list {
+            max-height: 150px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            padding: 4px;
+            margin-top: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .edit-doc-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 6px;
+            font-size: 10px;
+            border-radius: 4px;
+            min-width: 0;
+        }
+        .edit-doc-row:hover { background: var(--filter-active-bg); }
+        .edit-doc-row .ed-text {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-primary);
+        }
+        .edit-doc-row .ed-text .ed-nom {
+            font-family: monospace;
+            font-weight: 600;
+        }
+        .edit-doc-row .ed-del {
+            flex-shrink: 0;
+            width: auto;
+            min-width: 28px;
+            height: 26px;
+            padding: 0 8px;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            background: #fef2f2;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+        .edit-doc-row .ed-del:hover {
+            background: #fee2e2;
+            border-color: #f87171;
+            color: #b91c1c;
+        }
+        .edit-add-doc-wrap {
+            margin-top: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .edit-add-search {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 11px;
+            outline: none;
+            box-sizing: border-box;
+            margin-bottom: 6px;
+        }
+        .edit-add-search:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+        }
+        .edit-add-results {
+            max-height: 120px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            display: none;
+        }
+        .edit-add-results.open {
+            display: block;
+        }
+        .edit-add-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            font-size: 10px;
+            cursor: pointer;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            line-height: 1.3;
+            user-select: none;
+        }
+        .edit-add-item:last-child { border-bottom: none; }
+        .edit-add-item:hover {
+            background: var(--filter-active-bg);
+        }
+        .edit-add-item.selected {
+            background: var(--filter-active-bg);
+            color: var(--blue);
+        }
+        .edit-add-item input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--blue);
+            cursor: pointer;
+            flex-shrink: 0;
+            margin: 0;
+        }
+        .edit-add-item .ead-label {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .edit-add-item .ead-nom {
+            font-family: monospace;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .edit-add-empty {
+            padding: 10px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+        .edit-add-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .edit-add-actions .ead-count {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+        .shared-banner {
+            background: linear-gradient(90deg, #eef2ff, #e0e7ff);
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 11px;
+            color: #3730a3;
+        }
+        [data-theme="dark"] .shared-banner {
+            background: linear-gradient(90deg, #1e1b4b, #312e81);
+            border-color: #4338ca;
+            color: #c7d2fe;
+        }
+        .shared-banner .sb-name { font-weight: 700; }
+        .shared-banner .sb-exp { opacity: 0.85; font-size: 10px; }
+
         /* ===== Confirmaciones y Toasts minimalistas ===== */
         .ui-overlay {
             display: flex;
@@ -2194,6 +2765,7 @@
                         <button class="btn btn-sm btn-success manager-only" onclick="exportData(); closeHeaderMenu();"><i class="fas fa-download"></i> Exportar</button>
                         <button class="btn btn-sm btn-warning manager-only" onclick="document.getElementById('importFile').click(); closeHeaderMenu();"><i class="fas fa-upload"></i> Importar</button>
                         <button class="btn btn-sm btn-excel manager-only" onclick="exportToExcel(); closeHeaderMenu();"><i class="fas fa-file-excel"></i> Excel</button>
+                        <button class="btn btn-sm manager-only" style="background:#6366f1;color:white;border-color:#6366f1;" onclick="openManageSolicitudesModal(); closeHeaderMenu();"><i class="fas fa-link"></i> Solicitudes</button>
                         <button class="btn btn-sm btn-danger manager-only" onclick="eliminarBD(); closeHeaderMenu();"><i class="fas fa-database"></i> Eliminar BD</button>
                         <div class="menu-divider"></div>
                         <button class="btn btn-sm" style="color:var(--red);" onclick="logout(); closeHeaderMenu();"><i class="fas fa-sign-out-alt"></i> Salir</button>
@@ -2293,7 +2865,7 @@
                     <div class="filtros-actions">
                         <button class="btn btn-sm" onclick="resetFiltrosGenerales()" title="Limpiar filtros generales"><i class="fas fa-undo-alt"></i></button>
                         <button class="btn btn-sm btn-warning" onclick="resetAllFilters()" title="Limpiar filtros de columnas"><i class="fas fa-filter"></i></button>
-                        <button class="btn btn-sm" id="btnCheckDup" onclick="openDupCheckModal()" title="Verificar nomenclatura duplicada" style="background:#6366f1;color:white;border-color:#6366f1;"><i class="fas fa-clone"></i></button>
+                        <button class="btn btn-sm manager-only" id="btnCheckDup" onclick="openDupCheckModal()" title="Verificar nomenclatura duplicada" style="background:#6366f1;color:white;border-color:#6366f1;"><i class="fas fa-clone"></i></button>
                         <button class="btn btn-sm manager-only" id="btnColumnVisibility" onclick="openColumnVisibilityModal()" title="Ocultar columnas para Consultores" style="background:#64748b;color:white;border-color:#64748b;"><i class="fas fa-eye-slash"></i></button>
                     </div>
                 </div>
@@ -2547,6 +3119,131 @@
         </div>
     </div>
 
+
+    <!-- Modal: Compartir documentos seleccionados -->
+    <div class="modal-overlay" id="shareModal">
+        <div class="modal" style="max-width:460px;">
+            <h2><i class="fas fa-share-nodes"></i> Compartir documentos</h2>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
+                Configure la solicitud de acceso. Los destinatarios usarán el perfil <em>Consultor</em> y la contraseña indicada.
+            </p>
+            <div class="form-grid-modal" style="grid-template-columns:1fr;">
+                <div>
+                    <label>Nombre de la solicitud <span style="color:var(--red);">*</span></label>
+                    <input type="text" id="shareName" placeholder="Ej. Revisión auditoría Q3" maxlength="80">
+                </div>
+                <div>
+                    <label>Contraseña de acceso <span style="color:var(--red);">*</span></label>
+                    <input type="text" id="sharePassword" placeholder="Contraseña para esta solicitud" maxlength="60" autocomplete="off">
+                </div>
+                <div>
+                    <label>Tiempo de expiración <span style="color:var(--red);">*</span></label>
+                    <div class="share-exp-row">
+                        <div class="num-stepper">
+                            <button type="button" onclick="stepNumber('shareExpAmount', -1)" aria-label="Disminuir">−</button>
+                            <input type="number" id="shareExpAmount" min="1" max="365" value="24">
+                            <button type="button" onclick="stepNumber('shareExpAmount', 1)" aria-label="Aumentar">+</button>
+                        </div>
+                        <select id="shareExpUnit">
+                            <option value="h" selected>Horas</option>
+                            <option value="d">Días</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label>Columnas a mostrar</label>
+                    <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-sm" onclick="setAllShareColumns(true)"><i class="fas fa-check-double"></i> Todas</button>
+                        <button type="button" class="btn btn-sm" onclick="setAllShareColumns(false)"><i class="fas fa-eraser"></i> Ninguna</button>
+                    </div>
+                    <div class="share-col-list" id="shareColumnsList"></div>
+                </div>
+                <div>
+                    <label>Documentos seleccionados</label>
+                    <div id="shareDocsSummary" style="font-size:10px;color:var(--text-secondary);padding:6px 8px;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);max-height:80px;overflow-y:auto;"></div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top:14px;">
+                <button class="btn" onclick="closeShareModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmShare()"><i class="fas fa-envelope"></i> Compartir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Gestionar solicitudes compartidas -->
+    <div class="modal-overlay" id="manageSolicitudesModal">
+        <div class="modal" style="max-width:480px;">
+            <h2><i class="fas fa-link"></i> Solicitudes compartidas</h2>
+            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
+                Extienda el tiempo de acceso o revoque permisos de las solicitudes activas.
+            </p>
+            <div id="manageSolicitudesList" style="max-height:360px;overflow-y:auto;"></div>
+            <div class="modal-actions" style="margin-top:14px;">
+                <button class="btn" onclick="closeManageSolicitudesModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar solicitud compartida -->
+    <div class="modal-overlay" id="editSolModal">
+        <div class="modal" style="max-width:480px;">
+            <h2><i class="fas fa-pen"></i> Editar solicitud</h2>
+            <p id="editSolMsg" style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;"></p>
+            <div class="form-grid-modal" style="grid-template-columns:1fr;">
+                <div>
+                    <label>Nombre</label>
+                    <input type="text" id="editSolName" maxlength="80">
+                </div>
+                <div>
+                    <label>Contraseña de acceso</label>
+                    <input type="text" id="editSolPassword" maxlength="60" autocomplete="off">
+                </div>
+                <div>
+                    <label>Tiempo de acceso (desde ahora)</label>
+                    <div class="share-exp-row">
+                        <div class="num-stepper">
+                            <button type="button" onclick="stepNumber('editSolExpAmount', -1)">−</button>
+                            <input type="number" id="editSolExpAmount" min="1" max="365" value="24">
+                            <button type="button" onclick="stepNumber('editSolExpAmount', 1)">+</button>
+                        </div>
+                        <select id="editSolExpUnit">
+                            <option value="h">Horas</option>
+                            <option value="d">Días</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label>Columnas a mostrar</label>
+                    <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-sm" onclick="setAllEditSolColumns(true)"><i class="fas fa-check-double"></i> Todas</button>
+                        <button type="button" class="btn btn-sm" onclick="setAllEditSolColumns(false)"><i class="fas fa-eraser"></i> Ninguna</button>
+                    </div>
+                    <div class="share-col-list" id="editSolColumnsList"></div>
+                </div>
+                <div>
+                    <label>Documentos incluidos</label>
+                    <div class="edit-docs-list" id="editSolDocsList"></div>
+                    <div class="edit-add-doc-wrap">
+                        <label style="font-size:9px;margin-top:6px;">Agregar documento (selección múltiple)</label>
+                        <input type="text" class="edit-add-search" id="editSolAddSearch" placeholder="🔍 Buscar nomenclatura o nombre..." autocomplete="off" oninput="filterEditSolAddResults(this.value)" onfocus="filterEditSolAddResults(this.value)">
+                        <div class="edit-add-results" id="editSolAddResults"></div>
+                        <div class="edit-add-actions" id="editSolAddActions" style="display:none;">
+                            <button type="button" class="btn btn-sm" onclick="editSolSelectAllVisible(true)"><i class="fas fa-check-double"></i> Todos</button>
+                            <button type="button" class="btn btn-sm" onclick="editSolSelectAllVisible(false)"><i class="fas fa-eraser"></i> Ninguno</button>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="editSolAddSelected()"><i class="fas fa-plus"></i> Agregar</button>
+                            <span class="ead-count" id="editSolAddCount"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap;">
+                <button class="btn btn-danger" onclick="editSolDelete()" style="margin-right:auto;"><i class="fas fa-trash"></i> Eliminar</button>
+                <button class="btn" onclick="closeEditSolModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmEditSolicitud()"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toasts -->
     <div id="toastContainer"></div>
 
@@ -2561,6 +3258,761 @@
         let currentUser = null;
         let sessionTimerInterval = null;
         let sessionExpirationTime = null;
+
+
+        // ============================================================
+        // SELECCIÓN MÚLTIPLE Y COMPARTIR SOLICITUDES
+        // ============================================================
+        let selectMode = false;
+        let selectedDocIds = new Set();
+        let sharedView = null; // { id, name, columns, documentIds, expiresAt }
+        const SHARED_STORAGE_KEY = 'matriz_shared_solicitudes_v1';
+        let sharedSolicitudes = [];
+
+        function parseExpirationMs(amount, unit) {
+            const n = Math.max(1, parseInt(amount, 10) || 1);
+            if (unit === 'd') return n * 86400000;
+            return n * 3600000; // horas
+        }
+
+        function formatExpirationLabel(amount, unit) {
+            const n = Math.max(1, parseInt(amount, 10) || 1);
+            if (unit === 'd') return n === 1 ? '1 día' : `${n} días`;
+            return n === 1 ? '1 hora' : `${n} horas`;
+        }
+
+        function readExpFromInputs(amountId, unitId) {
+            const amount = document.getElementById(amountId)?.value;
+            const unit = document.getElementById(unitId)?.value || 'h';
+            return { amount: Math.max(1, parseInt(amount, 10) || 1), unit };
+        }
+
+        function loadSharedSolicitudesLocal() {
+            try {
+                const raw = localStorage.getItem(SHARED_STORAGE_KEY);
+                if (raw) return JSON.parse(raw) || [];
+            } catch (e) {}
+            return [];
+        }
+
+        function saveSharedSolicitudesLocal(list) {
+            try {
+                localStorage.setItem(SHARED_STORAGE_KEY, JSON.stringify(list));
+            } catch (e) {}
+        }
+
+        async function loadSharedSolicitudes() {
+            let list = loadSharedSolicitudesLocal();
+            try {
+                const { data: rows, error } = await supabaseClient.from('meta').select('*').eq('key', 'sharedSolicitudes');
+                if (!error && rows && rows.length > 0) {
+                    const row = rows[0];
+                    let parsed = null;
+                    if (row.value_text) {
+                        parsed = typeof row.value_text === 'string' ? JSON.parse(row.value_text) : row.value_text;
+                    } else if (row.value != null) {
+                        parsed = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
+                    }
+                    if (Array.isArray(parsed)) list = parsed;
+                }
+            } catch (e) {
+                console.warn('[Share] No se pudo cargar desde Supabase:', e);
+            }
+            // Limpiar expiradas
+            const now = Date.now();
+            const active = (list || []).filter(s => s && s.expiresAt && s.expiresAt > now);
+            if (active.length !== (list || []).length) {
+                await persistSharedSolicitudes(active);
+            } else {
+                sharedSolicitudes = active;
+            }
+            return sharedSolicitudes;
+        }
+
+        async function persistSharedSolicitudes(list) {
+            sharedSolicitudes = list || [];
+            saveSharedSolicitudesLocal(sharedSolicitudes);
+            try {
+                await supabaseClient.from('meta').upsert({
+                    key: 'sharedSolicitudes',
+                    value: Date.now(),
+                    value_text: JSON.stringify(sharedSolicitudes)
+                });
+            } catch (e) {
+                console.warn('[Share] Guardado solo local:', e);
+            }
+        }
+
+        function toggleSelectMode() {
+            if (!isManager) return;
+            selectMode = !selectMode;
+            if (!selectMode) {
+                selectedDocIds.clear();
+            }
+            renderAll();
+            updateShareButtonVisibility();
+        }
+
+        function onRowSelectChange(docId, checked) {
+            if (checked) selectedDocIds.add(Number(docId));
+            else selectedDocIds.delete(Number(docId));
+            updateShareButtonVisibility();
+        }
+
+        function updateShareButtonVisibility() {
+            const btn = document.getElementById('btnShareSelected');
+            if (btn) {
+                if (selectMode && selectedDocIds.size > 0) btn.classList.add('visible');
+                else btn.classList.remove('visible');
+            }
+            const countEl = document.getElementById('shareSelectCount');
+            if (countEl) countEl.textContent = selectedDocIds.size > 0 ? selectedDocIds.size : '';
+        }
+
+        function openShareModal() {
+            if (!isManager || selectedDocIds.size === 0) {
+                showToast('Seleccione al menos un documento', 'warning');
+                return;
+            }
+            const list = document.getElementById('shareColumnsList');
+            const hideable = COLUMNS.filter(c => c.key !== 'acciones' && c.key !== 'id');
+            list.innerHTML = hideable.map(col => `
+                <div class="share-col-item">
+                    <input type="checkbox" id="shareCol_${col.key}" value="${col.key}" checked>
+                    <label for="shareCol_${col.key}">${col.label}</label>
+                </div>
+            `).join('');
+            // Always include id and nomenclatura conceptually - id shown by default
+            const summary = document.getElementById('shareDocsSummary');
+            const docs = data.documents.filter(d => selectedDocIds.has(d.id));
+            summary.innerHTML = docs.map(d => `<div style="font-family:monospace;">${d.nomenclatura} ${d.nombre || ''}</div>`).join('') || 'Ninguno';
+            document.getElementById('shareName').value = '';
+            document.getElementById('sharePassword').value = '';
+            document.getElementById('shareExpAmount').value = '24';
+            document.getElementById('shareExpUnit').value = 'h';
+            document.getElementById('shareModal').classList.add('active');
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.remove('active');
+        }
+
+        function setAllShareColumns(checked) {
+            document.querySelectorAll('#shareColumnsList input[type="checkbox"]').forEach(cb => { cb.checked = !!checked; });
+        }
+
+        async function confirmShare() {
+            if (!isManager) return;
+            const name = (document.getElementById('shareName').value || '').trim();
+            const password = (document.getElementById('sharePassword').value || '').trim();
+            const exp = readExpFromInputs('shareExpAmount', 'shareExpUnit');
+            if (!name) {
+                showToast('Ingrese el nombre de la solicitud', 'warning');
+                return;
+            }
+            if (!password) {
+                showToast('Ingrese una contraseña para la solicitud', 'warning');
+                return;
+            }
+            if (!exp.amount || exp.amount < 1) {
+                showToast('Indique un tiempo de expiración válido', 'warning');
+                return;
+            }
+            const cols = [];
+            document.querySelectorAll('#shareColumnsList input[type="checkbox"]:checked').forEach(cb => cols.push(cb.value));
+            // Always show nomenclatura and nombre if available
+            if (!cols.includes('nomenclatura')) cols.unshift('nomenclatura');
+            if (!cols.includes('nombre') && COLUMNS.some(c => c.key === 'nombre')) cols.splice(1, 0, 'nombre');
+            if (cols.length === 0) {
+                showToast('Seleccione al menos una columna', 'warning');
+                return;
+            }
+            const docs = data.documents.filter(d => selectedDocIds.has(d.id));
+            if (docs.length === 0) {
+                showToast('No hay documentos seleccionados', 'warning');
+                return;
+            }
+
+            const ok = await showConfirm({
+                title: 'Compartir documentos',
+                message: `¿Crear la solicitud "${name}" con ${docs.length} documento(s) y abrir el correo?`,
+                type: 'save',
+                confirmText: 'Compartir',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
+
+            const now = Date.now();
+            const solicitud = {
+                id: 'sol_' + now + '_' + Math.random().toString(36).slice(2, 8),
+                name: name,
+                password: password,
+                createdAt: now,
+                expiresAt: now + parseExpirationMs(exp.amount, exp.unit),
+                expirationLabel: formatExpirationLabel(exp.amount, exp.unit),
+                expAmount: exp.amount,
+                expUnit: exp.unit,
+                documentIds: docs.map(d => d.id),
+                nomenclaturas: docs.map(d => d.nomenclatura),
+                columns: cols
+            };
+
+            await loadSharedSolicitudes();
+            sharedSolicitudes.push(solicitud);
+            await persistSharedSolicitudes(sharedSolicitudes);
+
+            data.history.push({
+                id: data.historyNextId++,
+                text: `🔗 Solicitud compartida "${name}" (${docs.length} docs, expira en ${solicitud.expirationLabel})`,
+                timestamp: Date.now()
+            });
+            saveData(data);
+            renderHistory();
+
+            const link = 'https://internalcontrolengineering.github.io/Matriz-Documental/';
+            const expDate = new Date(solicitud.expiresAt).toLocaleString('es-ES');
+            const docList = docs.map(d => `• ${d.nomenclatura} ${d.nombre || ''}`.trim()).join('\n');
+            const subject = encodeURIComponent(`Acceso a documentación normativa: ${name}`);
+            const body = encodeURIComponent(
+                `Se ha compartido acceso a documentos del Sistema de Control Interno Normativo.\n\n` +
+                `Solicitud: ${name}\n` +
+                `Contraseña: ${password}\n` +
+                `Expira: ${expDate} (${solicitud.expirationLabel})\n\n` +
+                `Documentos incluidos:\n${docList}\n\n` +
+                `Para acceder:\n1. Abra el enlace: ${link}\n` +
+                `2. Seleccione el perfil "Consultor".\n` +
+                `3. Elija la solicitud "${name}" e ingrese la contraseña.\n\n` +
+                `Atentamente,\nControl Interno`
+            );
+            window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+
+            closeShareModal();
+            selectMode = false;
+            selectedDocIds.clear();
+            renderAll();
+            showToast('Solicitud creada y correo abierto', 'success');
+        }
+
+        function isColumnHiddenInSharedView(key) {
+            if (!sharedView) return false;
+            if (key === 'acciones') return true;
+            if (key === 'id') return false; // keep visual id
+            return !(sharedView.columns || []).includes(key);
+        }
+
+        function getFilteredDataForShared() {
+            if (!sharedView) return null;
+            const ids = new Set((sharedView.documentIds || []).map(Number));
+            const noms = new Set((sharedView.nomenclaturas || []).map(String));
+            return data.documents.filter(d => ids.has(d.id) || noms.has(String(d.nomenclatura)));
+        }
+
+
+        let _editSolId = null;
+        let _editSolDocIds = [];
+
+        function stepNumber(inputId, delta) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            let v = parseInt(el.value, 10) || 1;
+            v = Math.max(1, Math.min(365, v + delta));
+            el.value = v;
+        }
+
+        async function openManageSolicitudesModal() {
+            if (!isManager) return;
+            await loadSharedSolicitudes();
+            renderManageSolicitudesList();
+            document.getElementById('manageSolicitudesModal').classList.add('active');
+        }
+
+        function closeManageSolicitudesModal() {
+            document.getElementById('manageSolicitudesModal').classList.remove('active');
+        }
+
+        function renderManageSolicitudesList() {
+            const container = document.getElementById('manageSolicitudesList');
+            if (!container) return;
+            const now = Date.now();
+            const list = (sharedSolicitudes || []).filter(s => s.expiresAt > now);
+            if (list.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding:16px;"><i class="fas fa-inbox"></i><br>No hay solicitudes activas</div>';
+                return;
+            }
+            container.innerHTML = list.map(s => {
+                const exp = new Date(s.expiresAt).toLocaleString('es-ES');
+                const n = (s.documentIds || s.nomenclaturas || []).length;
+                const safeName = String(s.name || '').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                return `<div class="sol-manage-item">
+                    <div class="sol-name-row">
+                        <div class="sol-name">${safeName}</div>
+                        <button type="button" class="sol-edit-btn" title="Editar solicitud" onclick="openEditSolicitud('${s.id}')"><i class="fas fa-pen"></i></button>
+                    </div>
+                    <div class="sol-meta">
+                        ${n} documento(s) · Expira: ${exp}<br>
+                        Duración: ${s.expirationLabel || '—'}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function openEditSolicitud(solId) {
+            if (!isManager) return;
+            const sol = sharedSolicitudes.find(s => s.id === solId);
+            if (!sol) return;
+
+            const pwd = await showPasswordConfirm({
+                title: 'Editar solicitud',
+                message: `Ingrese la contraseña de Control Interno para editar "${sol.name}".`,
+                type: 'info',
+                confirmText: 'Continuar'
+            });
+            if (pwd === null) return;
+            if (pwd !== MANAGER_PASSWORD) {
+                showToast('Contraseña incorrecta', 'delete');
+                return;
+            }
+
+            _editSolId = solId;
+            _editSolDocIds = [...(sol.documentIds || []).map(Number)];
+            document.getElementById('editSolMsg').textContent =
+                `Expira actualmente: ${new Date(sol.expiresAt).toLocaleString('es-ES')}`;
+            document.getElementById('editSolName').value = sol.name || '';
+            document.getElementById('editSolPassword').value = sol.password || '';
+            document.getElementById('editSolExpAmount').value = sol.expAmount || 24;
+            document.getElementById('editSolExpUnit').value = sol.expUnit || 'h';
+            renderEditSolColumnsList(sol.columns || []);
+            renderEditSolDocsList();
+            populateEditSolAddSelect();
+            document.getElementById('editSolModal').classList.add('active');
+        }
+
+        function renderEditSolColumnsList(selectedCols) {
+            const list = document.getElementById('editSolColumnsList');
+            if (!list) return;
+            const hideable = COLUMNS.filter(c => c.key !== 'acciones' && c.key !== 'id');
+            const selected = new Set(selectedCols || []);
+            // Si no hay columnas guardadas, marcar todas
+            const markAll = selected.size === 0;
+            list.innerHTML = hideable.map(col => {
+                const checked = markAll || selected.has(col.key) ? 'checked' : '';
+                return `<div class="share-col-item">
+                    <input type="checkbox" id="editSolCol_${col.key}" value="${col.key}" ${checked}>
+                    <label for="editSolCol_${col.key}">${col.label}</label>
+                </div>`;
+            }).join('');
+        }
+
+        function setAllEditSolColumns(checked) {
+            document.querySelectorAll('#editSolColumnsList input[type="checkbox"]').forEach(cb => { cb.checked = !!checked; });
+        }
+
+        function getEditSolSelectedColumns() {
+            const cols = [];
+            document.querySelectorAll('#editSolColumnsList input[type="checkbox"]:checked').forEach(cb => cols.push(cb.value));
+            if (!cols.includes('nomenclatura')) cols.unshift('nomenclatura');
+            if (!cols.includes('nombre') && COLUMNS.some(c => c.key === 'nombre')) {
+                const idx = cols.indexOf('nomenclatura');
+                cols.splice(idx + 1, 0, 'nombre');
+            }
+            return cols;
+        }
+
+        function closeEditSolModal() {
+            document.getElementById('editSolModal').classList.remove('active');
+            _editSolId = null;
+            _editSolDocIds = [];
+            _editSolPendingAdd = new Set();
+            const actions = document.getElementById('editSolAddActions');
+            if (actions) actions.style.display = 'none';
+        }
+
+        function renderEditSolDocsList() {
+            const list = document.getElementById('editSolDocsList');
+            if (!list) return;
+            const docs = (data.documents || []).filter(d => _editSolDocIds.includes(Number(d.id)));
+            const foundIds = new Set(docs.map(d => d.id));
+            if (docs.length === 0 && _editSolDocIds.length === 0) {
+                list.innerHTML = '<div style="padding:8px;font-size:10px;color:var(--text-secondary);text-align:center;">Sin documentos</div>';
+                return;
+            }
+            let rows = docs.map(d => {
+                const label = `${d.nomenclatura || ''} ${d.nombre || ''}`.trim();
+                const safe = String(label).replace(/</g, '&lt;');
+                return `<div class="edit-doc-row">
+                    <span class="ed-text" title="${safe}"><span class="ed-nom">${String(d.nomenclatura || '').replace(/</g, '&lt;')}</span> ${String(d.nombre || '').replace(/</g, '&lt;')}</span>
+                    <button type="button" class="ed-del" title="Eliminar documento" onclick="editSolRemoveDocument(${d.id})"><i class="fas fa-trash-alt"></i></button>
+                </div>`;
+            });
+            _editSolDocIds.filter(id => !foundIds.has(id)).forEach(id => {
+                rows.push(`<div class="edit-doc-row">
+                    <span class="ed-text">#${id} (no encontrado)</span>
+                    <button type="button" class="ed-del" title="Eliminar" onclick="editSolRemoveDocument(${id})"><i class="fas fa-trash-alt"></i></button>
+                </div>`);
+            });
+            list.innerHTML = rows.join('');
+        }
+
+        function getAvailableDocsForEditSol() {
+            return (data.documents || [])
+                .filter(d => !_editSolDocIds.includes(Number(d.id)) && d.status !== 'Eliminado')
+                .sort((a, b) => String(a.nomenclatura).localeCompare(String(b.nomenclatura), 'es'));
+        }
+
+        function populateEditSolAddSelect() {
+            const search = document.getElementById('editSolAddSearch');
+            if (search) search.value = '';
+            filterEditSolAddResults('');
+        }
+
+        let _editSolPendingAdd = new Set();
+
+        function filterEditSolAddResults(query) {
+            const box = document.getElementById('editSolAddResults');
+            const actions = document.getElementById('editSolAddActions');
+            if (!box) return;
+            const q = String(query || '').toLowerCase().trim();
+            const availablePool = getAvailableDocsForEditSol();
+            let available = availablePool;
+            if (q) {
+                const matched = availablePool.filter(d =>
+                    String(d.nomenclatura || '').toLowerCase().includes(q) ||
+                    String(d.nombre || '').toLowerCase().includes(q)
+                );
+                const related = expandSearchWithRelatedDocs(matched, data.documents || []);
+                const availIds = new Set(availablePool.map(d => d.id));
+                available = related.filter(d => availIds.has(d.id));
+                if (available.length === 0) available = matched;
+            }
+            // Limpiar pendientes que ya no están disponibles
+            const poolIds = new Set(availablePool.map(d => d.id));
+            _editSolPendingAdd = new Set([..._editSolPendingAdd].filter(id => poolIds.has(id)));
+
+            if (available.length === 0) {
+                box.innerHTML = '<div class="edit-add-empty">Sin resultados</div>';
+                box.classList.add('open');
+                if (actions) actions.style.display = 'none';
+                updateEditSolAddCount();
+                return;
+            }
+            box.innerHTML = available.slice(0, 80).map(d => {
+                const nom = String(d.nomenclatura || '').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                const nam = String(d.nombre || '').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                const checked = _editSolPendingAdd.has(d.id) ? 'checked' : '';
+                const sel = _editSolPendingAdd.has(d.id) ? 'selected' : '';
+                return `<div class="edit-add-item ${sel}" data-id="${d.id}" onclick="editSolTogglePending(${d.id}, event)">
+                    <input type="checkbox" ${checked} onclick="event.stopPropagation(); editSolTogglePending(${d.id}, event)">
+                    <span class="ead-label"><span class="ead-nom">${nom}</span>${nam}</span>
+                </div>`;
+            }).join('');
+            box.classList.add('open');
+            if (actions) actions.style.display = 'flex';
+            updateEditSolAddCount();
+        }
+
+        function editSolTogglePending(docId, evt) {
+            if (evt) evt.stopPropagation();
+            const id = Number(docId);
+            if (!id) return;
+            if (_editSolPendingAdd.has(id)) _editSolPendingAdd.delete(id);
+            else _editSolPendingAdd.add(id);
+            // Actualizar UI del item sin re-render completo
+            const row = document.querySelector(`.edit-add-item[data-id="${id}"]`);
+            if (row) {
+                const cb = row.querySelector('input[type="checkbox"]');
+                const on = _editSolPendingAdd.has(id);
+                if (cb) cb.checked = on;
+                row.classList.toggle('selected', on);
+            }
+            updateEditSolAddCount();
+        }
+
+        function editSolSelectAllVisible(checked) {
+            document.querySelectorAll('#editSolAddResults .edit-add-item').forEach(row => {
+                const id = Number(row.getAttribute('data-id'));
+                if (!id) return;
+                if (checked) _editSolPendingAdd.add(id);
+                else _editSolPendingAdd.delete(id);
+                const cb = row.querySelector('input[type="checkbox"]');
+                if (cb) cb.checked = !!checked;
+                row.classList.toggle('selected', !!checked);
+            });
+            updateEditSolAddCount();
+        }
+
+        function updateEditSolAddCount() {
+            const el = document.getElementById('editSolAddCount');
+            if (!el) return;
+            const n = _editSolPendingAdd.size;
+            el.textContent = n > 0 ? `${n} seleccionado(s)` : '';
+        }
+
+        function editSolRemoveDocument(docId) {
+            _editSolDocIds = _editSolDocIds.filter(id => Number(id) !== Number(docId));
+            renderEditSolDocsList();
+            const search = document.getElementById('editSolAddSearch');
+            filterEditSolAddResults(search ? search.value : '');
+        }
+
+        function editSolAddSelected() {
+            const ids = [..._editSolPendingAdd];
+            if (ids.length === 0) {
+                showToast('Seleccione al menos un documento', 'warning');
+                return;
+            }
+            let added = 0;
+            ids.forEach(id => {
+                if (!_editSolDocIds.includes(id)) {
+                    _editSolDocIds.push(id);
+                    added++;
+                }
+            });
+            _editSolPendingAdd.clear();
+            renderEditSolDocsList();
+            const search = document.getElementById('editSolAddSearch');
+            if (search) search.value = '';
+            filterEditSolAddResults('');
+            const box = document.getElementById('editSolAddResults');
+            if (box) box.classList.remove('open');
+            const actions = document.getElementById('editSolAddActions');
+            if (actions) actions.style.display = 'none';
+            showToast(added === 1 ? '1 documento agregado' : `${added} documentos agregados`, 'success');
+        }
+
+        function editSolPickDocument(docId) {
+            // compat: un clic alterna selección; usar Agregar para confirmar
+            editSolTogglePending(docId);
+        }
+
+        function editSolAddDocument() {
+            editSolAddSelected();
+        }
+
+        async function confirmEditSolicitud() {
+            if (!_editSolId || !isManager) return;
+            const sol = sharedSolicitudes.find(s => s.id === _editSolId);
+            if (!sol) return;
+
+            const name = (document.getElementById('editSolName').value || '').trim();
+            const password = (document.getElementById('editSolPassword').value || '').trim();
+            const exp = readExpFromInputs('editSolExpAmount', 'editSolExpUnit');
+            if (!name) { showToast('Ingrese el nombre', 'warning'); return; }
+            if (!password) { showToast('Ingrese la contraseña', 'warning'); return; }
+            if (_editSolDocIds.length === 0) { showToast('Debe incluir al menos un documento', 'warning'); return; }
+            const cols = getEditSolSelectedColumns();
+            if (cols.length === 0) { showToast('Seleccione al menos una columna', 'warning'); return; }
+
+            const ok = await showConfirm({
+                title: 'Guardar cambios',
+                message: `¿Actualizar la solicitud "${name}"? El tiempo de acceso se reinicia desde ahora.`,
+                type: 'save',
+                confirmText: 'Guardar',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
+
+            const docs = (data.documents || []).filter(d => _editSolDocIds.includes(Number(d.id)));
+            sol.name = name;
+            sol.password = password;
+            sol.expiresAt = Date.now() + parseExpirationMs(exp.amount, exp.unit);
+            sol.expirationLabel = formatExpirationLabel(exp.amount, exp.unit);
+            sol.expAmount = exp.amount;
+            sol.expUnit = exp.unit;
+            sol.documentIds = [..._editSolDocIds];
+            sol.nomenclaturas = docs.map(d => d.nomenclatura);
+            sol.columns = cols;
+
+            await persistSharedSolicitudes(sharedSolicitudes);
+            data.history.push({
+                id: data.historyNextId++,
+                text: `✏️ Solicitud "${name}" actualizada (${docs.length} docs, ${sol.expirationLabel})`,
+                timestamp: Date.now()
+            });
+            saveData(data);
+            renderHistory();
+            closeEditSolModal();
+            closeManageSolicitudesModal();
+            showToast('Solicitud actualizada', 'success');
+        }
+
+        async function editSolDelete() {
+            if (!_editSolId || !isManager) return;
+            const sol = sharedSolicitudes.find(s => s.id === _editSolId);
+            if (!sol) return;
+
+            const authorized = await requireDeleteAuth({
+                title: 'Eliminar solicitud',
+                message: `¿Eliminar permanentemente la solicitud "${sol.name}"? Los destinatarios perderán el acceso.`,
+                confirmText: 'Eliminar'
+            });
+            if (!authorized) return;
+
+            const name = sol.name;
+            sharedSolicitudes = sharedSolicitudes.filter(s => s.id !== _editSolId);
+            await persistSharedSolicitudes(sharedSolicitudes);
+            data.history.push({
+                id: data.historyNextId++,
+                text: `🚫 Solicitud "${name}" eliminada`,
+                timestamp: Date.now()
+            });
+            saveData(data);
+            renderHistory();
+            closeEditSolModal();
+            closeManageSolicitudesModal();
+            showToast('Solicitud eliminada', 'delete');
+        }
+
+        async function showConsultorGateway() {
+            await loadSharedSolicitudes();
+            const existing = document.getElementById('accessGateway');
+            if (existing) existing.remove();
+
+            const cards = sharedSolicitudes.map(s => {
+                const exp = new Date(s.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const n = (s.documentIds || s.nomenclaturas || []).length;
+                return `
+                    <div class="gateway-card solicitud" data-sol-id="${s.id}">
+                        <div class="gw-icon"><i class="fas fa-folder-open"></i></div>
+                        <div class="gw-title">${s.name.replace(/</g, '&lt;')}</div>
+                        <div class="gw-meta">${n} documento(s)<br>Expira: ${exp}</div>
+                    </div>`;
+            }).join('');
+
+            const htmlGw = `
+                <div class="access-gateway" id="accessGateway">
+                    <div class="access-gateway-inner">
+                        <h2><i class="fas fa-user-check"></i> Acceso Consultor</h2>
+                        <p class="sub">Elija acceso general o una solicitud compartida</p>
+                        <div class="gateway-grid">
+                            <div class="gateway-card general" id="gwGeneral">
+                                <div class="gw-icon"><i class="fas fa-globe"></i></div>
+                                <div class="gw-title">General</div>
+                                <div class="gw-meta">Matriz completa<br>(solo lectura)</div>
+                            </div>
+                            ${cards}
+                        </div>
+                        <div class="gateway-back">
+                            <button type="button" id="gwBackLogin"><i class="fas fa-arrow-left"></i> Volver</button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', htmlGw);
+
+            document.getElementById('gwGeneral').onclick = async () => {
+                const ok = await showConfirm({
+                    title: 'Acceso general',
+                    message: '¿Entrar a la matriz completa en modo solo lectura?',
+                    type: 'info',
+                    confirmText: 'Entrar',
+                    cancelText: 'Cancelar'
+                });
+                if (!ok) return;
+                document.getElementById('accessGateway')?.remove();
+                sharedView = null;
+                await enterAppAsConsultor();
+            };
+
+            document.querySelectorAll('.gateway-card.solicitud').forEach(card => {
+                card.onclick = () => openSolicitudPassword(card.dataset.solId);
+            });
+
+            document.getElementById('gwBackLogin').onclick = () => {
+                document.getElementById('accessGateway')?.remove();
+                // Restaurar login si se cerró
+                if (!document.getElementById('loginOverlay')) showLogin();
+            };
+        }
+
+        async function openSolicitudPassword(solId) {
+            const sol = sharedSolicitudes.find(s => s.id === solId);
+            if (!sol) {
+                showToast('Solicitud no encontrada o expirada', 'warning');
+                await showConsultorGateway();
+                return;
+            }
+            if (sol.expiresAt <= Date.now()) {
+                showToast('Esta solicitud ha expirado', 'warning');
+                sharedSolicitudes = sharedSolicitudes.filter(s => s.id !== solId);
+                await persistSharedSolicitudes(sharedSolicitudes);
+                await showConsultorGateway();
+                return;
+            }
+
+            const pwd = await showPasswordConfirm({
+                title: 'Acceso a solicitud',
+                message: `Ingrese la contraseña para "${sol.name}".`,
+                type: 'info',
+                confirmText: 'Acceder'
+            });
+            if (pwd === null) return;
+            if (pwd !== sol.password) {
+                showToast('Contraseña incorrecta', 'delete');
+                return;
+            }
+
+            const ok = await showConfirm({
+                title: 'Abrir solicitud',
+                message: `¿Abrir la solicitud "${sol.name}" con ${ (sol.documentIds || []).length } documento(s)?`,
+                type: 'info',
+                confirmText: 'Abrir',
+                cancelText: 'Cancelar'
+            });
+            if (!ok) return;
+
+            document.getElementById('accessGateway')?.remove();
+            document.getElementById('loginOverlay')?.remove();
+            sharedView = {
+                id: sol.id,
+                name: sol.name,
+                columns: sol.columns || [],
+                documentIds: sol.documentIds || [],
+                nomenclaturas: sol.nomenclaturas || [],
+                expiresAt: sol.expiresAt
+            };
+            await enterAppAsConsultor();
+            showToast(`Vista compartida: ${sol.name}`, 'info');
+        }
+
+        async function enterAppAsConsultor() {
+            saveSession('Consultor', false);
+            startSessionTimer(Date.now() + SESSION_DURATION_MS);
+            isManager = false;
+            currentUser = 'Consultor';
+            document.getElementById('loginOverlay')?.remove();
+            document.getElementById('accessGateway')?.remove();
+            document.getElementById('appContainer').style.display = 'block';
+            applyViewOnlyMode();
+            if (sharedView) document.body.classList.add('shared-view');
+            else document.body.classList.remove('shared-view');
+            data = await loadData();
+            await initHiddenColumns();
+            await initRequiredFields();
+            if (typeof initColumnResizeUI === 'function') initColumnResizeUI();
+            renderAll();
+            setupRealtimeSync();
+            // Banner si es vista compartida
+            injectSharedBanner();
+        }
+
+        function injectSharedBanner() {
+            const old = document.getElementById('sharedBanner');
+            if (old) old.remove();
+            if (!sharedView) return;
+            const matrizTab = document.getElementById('tab-matriz');
+            if (!matrizTab) return;
+            const card = matrizTab.querySelector('.card');
+            if (!card) return;
+            const exp = new Date(sharedView.expiresAt).toLocaleString('es-ES');
+            const banner = document.createElement('div');
+            banner.id = 'sharedBanner';
+            banner.className = 'shared-banner';
+            banner.innerHTML = `<i class="fas fa-link"></i>
+                <span class="sb-name">Solicitud: ${sharedView.name.replace(/</g, '&lt;')}</span>
+                <span class="sb-exp">Expira: ${exp}</span>
+                <span style="margin-left:auto;font-size:10px;">${(sharedView.documentIds||[]).length} docs</span>`;
+            card.insertBefore(banner, card.firstChild);
+        }
+
 
         // ============================================================
         // UI MINIMALISTA: Confirmaciones + Toasts con animación
@@ -2826,6 +4278,8 @@
             });
             if (ok) {
                 teardownRealtimeSync();
+                sharedView = null;
+                document.body.classList.remove('shared-view');
                 clearSession();
                 showToast('Sesión cerrada', 'info', 1500);
                 setTimeout(() => location.reload(), 400);
@@ -2983,7 +4437,11 @@
                 if (isLoggingIn) return;
                 if (document.querySelector('.password-modal')) return;
                 if (profileId === 'manager') handleManagerLogin();
-                else performLogin('Consultor', false);
+                else {
+                    // Consultor: mostrar gateway (General + solicitudes)
+                    document.getElementById('loginOverlay')?.remove();
+                    showConsultorGateway();
+                }
             }
             cards.forEach(card => card.onclick = (e) => { e.stopPropagation();
                 selectProfile(card.dataset.id); });
@@ -3007,6 +4465,8 @@
             if (session) {
                 currentUser = session.role;
                 isManager = session.isManager;
+                sharedView = null;
+                document.body.classList.remove('shared-view');
                 startSessionTimer(session.expiration);
                 document.getElementById('appContainer').style.display = 'block';
                 applyViewOnlyMode();
@@ -3014,6 +4474,7 @@
                 await initHiddenColumns();
                 await initRequiredFields();
                 initColumnResizeUI();
+                await loadSharedSolicitudes();
                 renderAll();
                 setupRealtimeSync();   // ← sincronización en vivo
             } else {
@@ -3653,9 +5114,14 @@
         }
 
         function isColumnHiddenForStakeholder(key) {
+            if (sharedView) {
+                if (key === 'acciones') return true;
+                if (key === 'id') return false;
+                return !(sharedView.columns || []).includes(key);
+            }
             // Acciones siempre oculta para Consultores
             if (key === 'acciones' && !isManager) return true;
-            return !isManager && hiddenColumnsForStakeholder.includes(key);
+            return hiddenColumnsForStakeholder.includes(key);
         }
 
         // ============================================================
@@ -3898,7 +5364,7 @@
             if (key === 'hipervinculo') return 55;
             if (key === 'nombre') return 120;
             if (key === 'documentoPadre') return 130;
-            if (key === 'acciones') return 55;
+            if (key === 'acciones') return 88;
             if (key === 'nomenclatura') return 90;
             return 75;
         }
@@ -4076,7 +5542,71 @@
             return filtered;
         }
 
-        function getFilteredData() {
+        
+        /**
+         * Expande una lista de documentos coincidentes con padre, hermanos e hijos
+         * (misma lógica que la búsqueda de la matriz).
+         * @param {Array} matchedDocs documentos que coinciden con la búsqueda
+         * @param {Array} [universe] universo opcional para filtrar resultados (default: data.documents)
+         * @returns {Array} documentos relacionados (sin duplicados, orden por id)
+         */
+        function expandSearchWithRelatedDocs(matchedDocs, universe) {
+            const all = Array.isArray(universe) ? universe : ((data && data.documents) ? data.documents : []);
+            if (!matchedDocs || matchedDocs.length === 0) return [];
+
+            const includeNoms = new Set();
+            matchedDocs.forEach(d => {
+                const nom = String(d.nomenclatura || '').trim();
+                if (nom) includeNoms.add(nom);
+                // Padre
+                const padreNom = String(d.documentoPadre || '').trim();
+                if (padreNom) {
+                    includeNoms.add(padreNom);
+                    // Hermanos (mismo padre)
+                    all.forEach(sib => {
+                        if (String(sib.documentoPadre || '').trim() === padreNom && sib.nomenclatura) {
+                            includeNoms.add(String(sib.nomenclatura).trim());
+                        }
+                    });
+                }
+                // Hijos de este documento
+                all.forEach(child => {
+                    if (String(child.documentoPadre || '').trim() === nom && child.nomenclatura) {
+                        includeNoms.add(String(child.nomenclatura).trim());
+                    }
+                });
+            });
+
+            const result = all.filter(d => includeNoms.has(String(d.nomenclatura || '').trim()));
+            result.sort((a, b) => (a.id || 0) - (b.id || 0));
+            return result.length > 0 ? result : matchedDocs.slice();
+        }
+
+        function searchDocumentsByText(query, universe) {
+            const q = String(query || '').toLowerCase().trim();
+            const all = Array.isArray(universe) ? universe : ((data && data.documents) ? data.documents : []);
+            if (!q) return all.slice();
+            const matched = all.filter(d =>
+                String(d.nomenclatura || '').toLowerCase().includes(q) ||
+                String(d.nombre || '').toLowerCase().includes(q)
+            );
+            if (matched.length === 0) return [];
+            return expandSearchWithRelatedDocs(matched, all);
+        }
+
+function getFilteredData() {
+            if (sharedView) {
+                let f = getFilteredDataForShared() || [];
+                const search = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+                if (search) {
+                    const matched = f.filter(d =>
+                        String(d.nomenclatura || '').toLowerCase().includes(search) ||
+                        String(d.nombre || '').toLowerCase().includes(search)
+                    );
+                    f = expandSearchWithRelatedDocs(matched, f);
+                }
+                return f;
+            }
             const base = getDataWithGeneralFilters();
             let filtered = applyColumnFilters(base);
             const search = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
@@ -4088,39 +5618,10 @@
             );
             if (matched.length === 0) return [];
 
-            const byNom = new Map();
-            (data.documents || []).forEach(d => {
-                if (d.nomenclatura) byNom.set(String(d.nomenclatura).trim(), d);
-            });
-
-            const includeNoms = new Set();
-            matched.forEach(d => {
-                const nom = String(d.nomenclatura || '').trim();
-                if (nom) includeNoms.add(nom);
-                // Padre
-                const padreNom = String(d.documentoPadre || '').trim();
-                if (padreNom) {
-                    includeNoms.add(padreNom);
-                    // Hermanos (mismo padre)
-                    (data.documents || []).forEach(sib => {
-                        if (String(sib.documentoPadre || '').trim() === padreNom && sib.nomenclatura) {
-                            includeNoms.add(String(sib.nomenclatura).trim());
-                        }
-                    });
-                }
-                // Hijos de este documento
-                (data.documents || []).forEach(child => {
-                    if (String(child.documentoPadre || '').trim() === nom && child.nomenclatura) {
-                        includeNoms.add(String(child.nomenclatura).trim());
-                    }
-                });
-            });
-
-            // Familia dentro de los filtros generales/columna aplicados al universo
-            const family = applyColumnFilters(
-                getDataWithGeneralFilters().filter(d => includeNoms.has(String(d.nomenclatura || '').trim()))
-            );
-            return family.length > 0 ? family : matched;
+            // Familia (padre / hermanos / hijos) restringida a filtros activos
+            const family = expandSearchWithRelatedDocs(matched, getDataWithGeneralFilters());
+            const familyFiltered = applyColumnFilters(family);
+            return familyFiltered.length > 0 ? familyFiltered : matched;
         }
 
         // ============================================================
@@ -4137,8 +5638,14 @@
             COLUMNS.forEach(col => {
                 const hiddenClass = isColumnHiddenForStakeholder(col.key) ? 'col-hidden-stakeholder' : '';
                 if (col.key === 'acciones') {
+                    const selectActive = selectMode ? 'active' : '';
+                    const shareVisible = (selectMode && selectedDocIds.size > 0) ? 'visible' : '';
+                    const selectBtns = isManager && !sharedView
+                        ? `<button type="button" class="select-mode-toggle ${selectActive}" onclick="toggleSelectMode()" title="Seleccionar documentos"><i class="fas fa-check-square"></i></button>
+                            <button type="button" class="share-btn-header ${shareVisible}" id="btnShareSelected" onclick="openShareModal()" title="Compartir seleccionados"><i class="fas fa-share-nodes"></i><span id="shareSelectCount">${selectedDocIds.size > 0 ? selectedDocIds.size : ''}</span></button>`
+                        : '';
                     html +=
-                        `<th class="${hiddenClass}" style="text-align:center;min-width:50px;background:var(--header-bg);"><div class="th-content"><span class="th-label" style="font-size:9px;">${col.label}</span></div></th>`;
+                        `<th class="${hiddenClass} col-acciones" style="text-align:center;width:88px;min-width:88px;max-width:100px;background:var(--header-bg);overflow:hidden;"><div class="th-content" style="align-items:center;overflow:hidden;"><span class="th-acciones-row"><span class="th-label" style="font-size:9px;">${col.label}</span>${selectBtns}</span></div></th>`;
                     return;
                 }
                 const colWidth = col.key === 'hipervinculo' ? '50px' : (col.key === 'nombre' ? '100px' : (col
@@ -4547,7 +6054,8 @@
                     <td class="${h('documentoPadre')}" style="font-size:9px;" title="${padreEtiqueta.replace(/"/g, '&quot;')}">${padreEtiqueta || '-'}</td>
                     <td class="${h('status')}" style="font-size:9px;"><span class="status-badge ${doc.status}" style="font-size:9px;">${doc.status}</span></td>
                     <td class="${h('acciones')}" style="text-align:center;">
-                        ${isManager ? `<div class="actions-cell">
+                        ${isManager && !sharedView ? `<div class="actions-cell">
+                            ${selectMode ? `<input type="checkbox" class="row-select-cb" data-doc-id="${doc.id}" ${selectedDocIds.has(doc.id) ? 'checked' : ''} onchange="onRowSelectChange(${doc.id}, this.checked)" title="Seleccionar">` : ''}
                             <i class="fas fa-pen" onclick="openEditModal(${doc.id})" title="Editar" style="font-size:10px;"></i>
                             <i class="fas fa-trash" onclick="deleteDocument(${doc.id}, event)" title="Eliminar" style="font-size:10px;"></i>
                         </div>` : ''}
@@ -5183,11 +6691,21 @@
             const current = document.getElementById('mDocPadre')?.value || '';
             let opts = _padreComboOpts.slice();
             if (q) {
-                opts = opts.filter(o =>
+                const matchedOpts = opts.filter(o =>
                     o.label.toLowerCase().includes(q) ||
                     o.value.toLowerCase().includes(q) ||
                     (o.nombre || '').toLowerCase().includes(q)
                 );
+                // Expandir con documentos relacionados que también sean opciones de padre
+                const matchedDocs = (data.documents || []).filter(d =>
+                    matchedOpts.some(o => o.value === d.nomenclatura)
+                );
+                const related = expandSearchWithRelatedDocs(matchedDocs, data.documents || []);
+                const relatedNoms = new Set(related.map(d => String(d.nomenclatura || '').trim()));
+                opts = opts.filter(o =>
+                    matchedOpts.some(m => m.value === o.value) || relatedNoms.has(o.value)
+                );
+                if (opts.length === 0) opts = matchedOpts;
             }
             let html = `<div class="padre-combo-item${current === '' ? ' active' : ''}" data-value="" data-label="">
                 <span class="padre-name">— Sin documento padre —</span>
@@ -5377,6 +6895,10 @@
         }
 
         function openDupCheckModal() {
+            if (!isManager) {
+                showToast('Solo disponible para Control Interno', 'warning');
+                return;
+            }
             const overlay = document.getElementById('uiDupOverlay');
             const input = document.getElementById('uiDupInput');
             const result = document.getElementById('uiDupResult');
@@ -5502,7 +7024,7 @@
         let dashStatusChart, dashCategoriaChart, dashClasificacionChart, dashYearChart, dashTipoChart;
 
         function getDashboardFilteredData() {
-            let f = [...data.documents];
+            let f = sharedView ? (getFilteredDataForShared() || []) : [...data.documents];
             const anio = document.getElementById('dashboardFiltroAnio').value;
             const unidad = document.getElementById('dashboardFiltroUnidad').value;
             const area = document.getElementById('dashboardFiltroArea').value;
@@ -6375,6 +7897,14 @@
         document.getElementById('dashboardFiltroUnidad').addEventListener('change', renderDashboard);
         document.getElementById('dashboardFiltroArea').addEventListener('change', renderDashboard);
         document.getElementById('docModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+        document.getElementById('shareModal')?.addEventListener('click', function(e) { if (e.target === this) closeShareModal(); });
+        document.getElementById('manageSolicitudesModal')?.addEventListener('click', function(e) { if (e.target === this) closeManageSolicitudesModal(); });
+        document.getElementById('editSolModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeEditSolModal();
+            const wrap = document.querySelector('.edit-add-doc-wrap');
+            const box = document.getElementById('editSolAddResults');
+            if (box && wrap && !wrap.contains(e.target)) box.classList.remove('open');
+        });
         document.getElementById('columnVisibilityModal')?.addEventListener('click', function(e) { if (e.target === this) closeColumnVisibilityModal(); });
         document.getElementById('requiredFieldsModal')?.addEventListener('click', function(e) { if (e.target === this) closeRequiredFieldsModal(); });
         document.getElementById('reqPasswordModal')?.addEventListener('click', function(e) { if (e.target === this) closeReqPasswordModal(); });
