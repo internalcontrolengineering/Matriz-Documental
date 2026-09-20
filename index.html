@@ -1814,6 +1814,11 @@
         body.view-only td.col-hidden-stakeholder {
             display: none !important;
         }
+        /* Ocultar pestaña Dashboard para Consultores cuando está configurado */
+        body.view-only.hide-dashboard-stakeholder #tabDashboardBtn,
+        body.view-only.hide-dashboard-stakeholder #tab-dashboard {
+            display: none !important;
+        }
         .col-visibility-item {
             display: flex;
             align-items: center;
@@ -2777,7 +2782,7 @@
 
         <div class="tabs">
             <button class="tab active" onclick="switchTab('matriz')"><i class="fas fa-table"></i> Matriz</button>
-            <button class="tab" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
+            <button class="tab" id="tabDashboardBtn" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
             <button class="tab manager-only" id="tabBatchBtn" onclick="switchTab('batch')"><i class="fas fa-layer-group"></i> Carga Masiva</button>
         </div>
 
@@ -3056,15 +3061,23 @@
     <!-- Modal: Visibilidad de columnas para Consultores -->
     <div class="modal-overlay" id="columnVisibilityModal">
         <div class="modal" style="max-width:420px;">
-            <h2><i class="fas fa-eye-slash"></i> Columnas ocultas para Consultores</h2>
+            <h2><i class="fas fa-eye-slash"></i> Visibilidad para Consultores</h2>
             <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
-                Selecciona las columnas que <strong>NO</strong> deben verse cuando se inicia sesión con el perfil <em>Consultor</em>.
+                Configure qué <strong>columnas</strong> y pestañas <strong>NO</strong> deben verse con el perfil <em>Consultor</em>.
             </p>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-window-maximize"></i> Pestañas</div>
+                <div class="col-visibility-item" onclick="this.querySelector('input').click()">
+                    <input type="checkbox" id="colvis_hideDashboard" value="__hideDashboard" onclick="event.stopPropagation()">
+                    <label for="colvis_hideDashboard">Ocultar pestaña Dashboard</label>
+                </div>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-columns"></i> Columnas de la matriz</div>
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
                 <button class="btn btn-sm" onclick="setAllColumnVisibility(false)" title="Desmarcar todas"><i class="fas fa-eraser"></i> Limpiar todo</button>
                 <button class="btn btn-sm" onclick="setAllColumnVisibility(true)" title="Marcar todas"><i class="fas fa-check-double"></i> Seleccionar todo</button>
             </div>
-            <div id="columnVisibilityList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+            <div id="columnVisibilityList" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
             <div class="modal-actions" style="margin-top:14px;">
                 <button class="btn" onclick="closeColumnVisibilityModal()">Cancelar</button>
                 <button class="btn btn-primary" onclick="saveColumnVisibility()"><i class="fas fa-save"></i> Guardar</button>
@@ -3130,11 +3143,11 @@
             <div class="form-grid-modal" style="grid-template-columns:1fr;">
                 <div>
                     <label>Nombre de la solicitud <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="shareName" placeholder="Ingresa el ID de la Solicitud" maxlength="80">
+                    <input type="text" id="shareName" placeholder="Ej. Revisión auditoría Q3" maxlength="80">
                 </div>
                 <div>
                     <label>Contraseña de acceso <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="sharePassword" placeholder="Ingresa Contraseña para esta solicitud" maxlength="60" autocomplete="off">
+                    <input type="text" id="sharePassword" placeholder="Contraseña para esta solicitud" maxlength="60" autocomplete="off">
                 </div>
                 <div>
                     <label>Tiempo de expiración <span style="color:var(--red);">*</span></label>
@@ -4253,8 +4266,14 @@
         }
 
         function applyViewOnlyMode() {
-            if (isManager) document.body.classList.remove('view-only');
-            else document.body.classList.add('view-only');
+            if (isManager) {
+                document.body.classList.remove('view-only');
+                document.body.classList.remove('hide-dashboard-stakeholder');
+            } else {
+                document.body.classList.add('view-only');
+                if (hideDashboardForStakeholder) document.body.classList.add('hide-dashboard-stakeholder');
+                else document.body.classList.remove('hide-dashboard-stakeholder');
+            }
             const badge = document.getElementById('userBadge');
             const label = document.getElementById('userRoleLabel');
             if (badge && label) {
@@ -4264,6 +4283,13 @@
                 } else {
                     badge.className = 'user-badge-header stakeholder';
                     label.textContent = 'Consultor (solo lectura)';
+                }
+            }
+            // Si el consultor está en Dashboard y se oculta, volver a Matriz
+            if (!isManager && hideDashboardForStakeholder) {
+                const dashTab = document.getElementById('tab-dashboard');
+                if (dashTab && dashTab.classList.contains('active')) {
+                    switchTab('matriz');
                 }
             }
         }
@@ -4993,7 +5019,9 @@
 
         // Columnas ocultas para el perfil Consultor (se sincroniza vía Supabase meta)
         let hiddenColumnsForStakeholder = [];
+        let hideDashboardForStakeholder = false;
         const COL_VIS_STORAGE_KEY = 'matriz_hidden_columns_v1';
+        const DASH_HIDE_STORAGE_KEY = 'matriz_hide_dashboard_stakeholder_v1';
 
         function loadHiddenColumnsLocal() {
             try {
@@ -5043,6 +5071,54 @@
             }
         }
 
+        function loadHideDashboardLocal() {
+            try {
+                return localStorage.getItem(DASH_HIDE_STORAGE_KEY) === '1';
+            } catch (e) { return false; }
+        }
+
+        function saveHideDashboardLocal(val) {
+            try {
+                localStorage.setItem(DASH_HIDE_STORAGE_KEY, val ? '1' : '0');
+            } catch (e) {}
+        }
+
+        async function loadHideDashboardFromSupabase() {
+            try {
+                const { data: rows, error } = await supabaseClient.from('meta').select('*').eq('key', 'hideDashboardStakeholder');
+                if (error) throw error;
+                if (rows && rows.length > 0) {
+                    const row = rows[0];
+                    if (row.value_text != null) {
+                        const v = String(row.value_text).trim().toLowerCase();
+                        return v === '1' || v === 'true';
+                    }
+                    if (row.value != null) return Number(row.value) === 1 || row.value === true;
+                }
+            } catch (e) {
+                console.warn('[DashHide] No se pudo cargar desde Supabase:', e.message || e);
+            }
+            return null;
+        }
+
+        async function saveHideDashboardToSupabase(val) {
+            try {
+                const { error } = await supabaseClient.from('meta').upsert({
+                    key: 'hideDashboardStakeholder',
+                    value: val ? 1 : 0,
+                    value_text: val ? '1' : '0'
+                });
+                if (error) {
+                    console.warn('[DashHide] Guardado solo local:', error.message);
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                console.warn('[DashHide] Error Supabase:', e);
+                return false;
+            }
+        }
+
         async function initHiddenColumns() {
             // 1. Intentar Supabase
             const remote = await loadHiddenColumnsFromSupabase();
@@ -5053,6 +5129,15 @@
                 // 2. Fallback local
                 hiddenColumnsForStakeholder = loadHiddenColumnsLocal();
             }
+            // Dashboard visibility for consultor
+            const remoteDash = await loadHideDashboardFromSupabase();
+            if (remoteDash !== null) {
+                hideDashboardForStakeholder = remoteDash;
+                saveHideDashboardLocal(remoteDash);
+            } else {
+                hideDashboardForStakeholder = loadHideDashboardLocal();
+            }
+            applyViewOnlyMode();
         }
 
         function openColumnVisibilityModal() {
@@ -5071,6 +5156,9 @@
                 </div>`;
             }).join('');
 
+            const dashCb = document.getElementById('colvis_hideDashboard');
+            if (dashCb) dashCb.checked = !!hideDashboardForStakeholder;
+
             document.getElementById('columnVisibilityModal').classList.add('active');
         }
 
@@ -5088,12 +5176,18 @@
             const checkboxes = document.querySelectorAll('#columnVisibilityList input[type="checkbox"]');
             const selected = [];
             checkboxes.forEach(cb => { if (cb.checked) selected.push(cb.value); });
+            const hideDash = !!(document.getElementById('colvis_hideDashboard')?.checked);
+
+            const parts = [];
+            if (selected.length > 0) parts.push(`${selected.length} columna(s)`);
+            if (hideDash) parts.push('pestaña Dashboard');
+            const msg = parts.length === 0
+                ? 'Los Consultores verán todas las columnas y el Dashboard. ¿Continuar?'
+                : `Se ocultará para Consultores: ${parts.join(' y ')}. ¿Guardar cambios?`;
 
             const okConfirm = await showConfirm({
-                title: 'Guardar columnas ocultas',
-                message: selected.length === 0
-                    ? 'No hay columnas seleccionadas. Los Consultores verán todas las columnas. ¿Continuar?'
-                    : `Se ocultarán ${selected.length} columna(s) para el perfil Consultor. ¿Guardar cambios?`,
+                title: 'Guardar visibilidad',
+                message: msg,
                 type: 'save',
                 confirmText: 'Guardar',
                 cancelText: 'Cancelar'
@@ -5101,15 +5195,19 @@
             if (!okConfirm) return;
 
             hiddenColumnsForStakeholder = selected;
+            hideDashboardForStakeholder = hideDash;
             saveHiddenColumnsLocal(selected);
-            const ok = await saveHiddenColumnsToSupabase(selected);
+            saveHideDashboardLocal(hideDash);
+            const okCols = await saveHiddenColumnsToSupabase(selected);
+            const okDash = await saveHideDashboardToSupabase(hideDash);
 
             closeColumnVisibilityModal();
+            applyViewOnlyMode();
             renderAll();
-            if (ok) {
-                showToast('Columnas ocultas actualizadas', 'save');
+            if (okCols && okDash) {
+                showToast('Visibilidad para Consultores actualizada', 'save');
             } else {
-                showToast('Guardado local. No se pudo sincronizar con Supabase', 'warning');
+                showToast('Guardado localmente (sin sincronizar completo)', 'warning');
             }
         }
 
@@ -7750,6 +7848,10 @@ function getFilteredData() {
         // ============================================================
         function switchTab(tab) {
             if (tab === 'batch' && !isManager) return;
+            if (tab === 'dashboard' && !isManager && hideDashboardForStakeholder) {
+                showToast('Dashboard no disponible para Consultor', 'warning');
+                return;
+            }
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             if (tab === 'matriz') { document.querySelector('.tab:first-child').classList.add('active');
