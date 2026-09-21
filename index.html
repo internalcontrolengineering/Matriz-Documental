@@ -119,7 +119,7 @@
             gap: 14px;
         }
         .header-logo {
-            height: 70px;
+            height: 52px;
             width: auto;
             object-fit: contain;
             border-radius: 6px;
@@ -2793,7 +2793,7 @@
                     <button class="btn btn-primary manager-only" onclick="openAddModal()"><i class="fas fa-plus"></i> Agregar</button>
                 </div>
                 <div class="matriz-search">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye documentos origen y sus relacionados)..." oninput="renderAll()">
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye padre e hijos)..." oninput="renderAll()">
                     <button class="search-clear" onclick="document.getElementById('searchInput').value=''; renderAll();" title="Limpiar búsqueda"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="filtros-generales" id="filtrosGenerales">
@@ -4499,8 +4499,10 @@
                     applyViewOnlyMode();
                     data = await loadData();
                     await initHiddenColumns();
+                    await initRequiredFields();
+                    await loadSharedSolicitudes();
                     renderAll();
-                    setupRealtimeSync();   // ← sincronización en vivo
+                    setupRealtimeSync();
                 } catch (err) {
                     console.error(err);
                     isLoggingIn = false;
@@ -5428,63 +5430,119 @@
         // Por defecto todos obligatorios excepto documentoPadre (opcional)
         let requiredFieldsConfig = ALL_FORM_FIELDS.map(f => f.key).filter(k => k !== 'documentoPadre');
 
-        function loadRequiredFieldsLocal() {
+function loadRequiredFieldsLocal() {
             try {
                 const raw = localStorage.getItem(REQ_FIELDS_KEY);
-                if (raw) {
-                    const arr = JSON.parse(raw);
-                    if (Array.isArray(arr)) return arr;
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (parsed && Array.isArray(parsed.fields)) {
+                    return { fields: parsed.fields, updatedAt: Number(parsed.updatedAt) || 0 };
                 }
-            } catch(e) {}
-            return ALL_FORM_FIELDS.map(f => f.key).filter(k => k !== 'documentoPadre');
+                if (Array.isArray(parsed)) {
+                    return { fields: parsed, updatedAt: 0 };
+                }
+            } catch (e) {}
+            return null;
         }
 
-        function saveRequiredFieldsLocal(arr) {
-            localStorage.setItem(REQ_FIELDS_KEY, JSON.stringify(arr));
+        function saveRequiredFieldsLocal(arr, updatedAt) {
+            try {
+                const payload = {
+                    fields: Array.isArray(arr) ? arr : [],
+                    updatedAt: updatedAt != null ? Number(updatedAt) : Date.now()
+                };
+                localStorage.setItem(REQ_FIELDS_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.warn('[ReqFields] No se pudo guardar en localStorage:', e);
+            }
         }
 
         async function loadRequiredFieldsFromSupabase() {
             try {
-                const { data: rows, error } = await supabaseClient.from('meta').select('*').eq('key', 'requiredFields');
+                const { data: rows, error } = await supabaseClient
+                    .from('meta')
+                    .select('*')
+                    .eq('key', 'requiredFields');
                 if (error) throw error;
-                if (rows && rows.length > 0 && rows[0].value_text) {
-                    const arr = JSON.parse(rows[0].value_text);
-                    if (Array.isArray(arr)) return arr;
+                if (!rows || rows.length === 0) return null;
+                rows.sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
+                const row = rows[0];
+                let fields = null;
+                if (row.value_text) {
+                    const parsed = typeof row.value_text === 'string'
+                        ? JSON.parse(row.value_text)
+                        : row.value_text;
+                    if (Array.isArray(parsed)) fields = parsed;
+                    else if (parsed && Array.isArray(parsed.fields)) fields = parsed.fields;
                 }
-            } catch(e) {
+                if (!fields) return null;
+                return { fields, updatedAt: Number(row.value) || 0 };
+            } catch (e) {
                 console.warn('[ReqFields] No se pudo cargar desde Supabase:', e.message || e);
+                return null;
             }
-            return null;
         }
 
-        async function saveRequiredFieldsToSupabase(arr) {
+        async function saveRequiredFieldsToSupabase(arr, updatedAt) {
+            const ts = updatedAt != null ? Number(updatedAt) : Date.now();
             try {
-                const { error } = await supabaseClient.from('meta').upsert({
-                    key: 'requiredFields',
-                    value: Date.now(),
-                    value_text: JSON.stringify(arr)
-                });
+                const { error } = await supabaseClient.from('meta').upsert(
+                    {
+                        key: 'requiredFields',
+                        value: ts,
+                        value_text: JSON.stringify(arr)
+                    },
+                    { onConflict: 'key' }
+                );
                 if (error) {
-                    console.warn('[ReqFields] Guardado solo local:', error.message);
-                    return false;
+                    console.warn('[ReqFields] Upsert falló, reintentando delete+insert:', error.message);
+                    await supabaseClient.from('meta').delete().eq('key', 'requiredFields');
+                    const ins = await supabaseClient.from('meta').insert({
+                        key: 'requiredFields',
+                        value: ts,
+                        value_text: JSON.stringify(arr)
+                    });
+                    if (ins.error) {
+                        console.warn('[ReqFields] Guardado solo local:', ins.error.message);
+                        return false;
+                    }
                 }
                 return true;
-            } catch(e) {
+            } catch (e) {
                 console.warn('[ReqFields] Error Supabase:', e);
                 return false;
             }
         }
 
+        function defaultRequiredFields() {
+            return ALL_FORM_FIELDS.map(f => f.key).filter(k => k !== 'documentoPadre');
+        }
+
         async function initRequiredFields() {
             const remote = await loadRequiredFieldsFromSupabase();
-            if (remote !== null) {
-                requiredFieldsConfig = remote;
-                saveRequiredFieldsLocal(remote);
+            const local = loadRequiredFieldsLocal();
+
+            let chosen = null;
+            if (remote && local) {
+                chosen = (remote.updatedAt || 0) >= (local.updatedAt || 0) ? remote : local;
             } else {
-                requiredFieldsConfig = loadRequiredFieldsLocal();
+                chosen = remote || local;
+            }
+
+            if (chosen && Array.isArray(chosen.fields)) {
+                requiredFieldsConfig = chosen.fields.slice();
+                saveRequiredFieldsLocal(requiredFieldsConfig, chosen.updatedAt || Date.now());
+                if (local && remote && (local.updatedAt || 0) > (remote.updatedAt || 0)) {
+                    saveRequiredFieldsToSupabase(requiredFieldsConfig, local.updatedAt).catch(() => {});
+                } else if (!remote && local) {
+                    saveRequiredFieldsToSupabase(requiredFieldsConfig, local.updatedAt || Date.now()).catch(() => {});
+                }
+            } else {
+                requiredFieldsConfig = defaultRequiredFields();
             }
             applyRequiredFieldMarkers();
         }
+
 
         function applyRequiredFieldMarkers() {
             // Actualizar asteriscos * en labels del modal
@@ -5581,18 +5639,25 @@
             });
             const okConfirm = await showConfirm({
                 title: 'Campos obligatorios',
-                message: `Se marcarán ${selected.length} campo(s) como obligatorios. ¿Guardar configuración?`,
+                message: selected.length === 0
+                    ? 'No hay campos marcados como obligatorios. ¿Guardar de todos modos?'
+                    : `Se marcarán ${selected.length} campo(s) como obligatorios. ¿Guardar configuración?`,
                 type: 'save',
                 confirmText: 'Guardar',
                 cancelText: 'Cancelar'
             });
             if (!okConfirm) return;
-            requiredFieldsConfig = selected;
-            saveRequiredFieldsLocal(selected);
-            await saveRequiredFieldsToSupabase(selected);
+            const ts = Date.now();
+            requiredFieldsConfig = selected.slice();
+            saveRequiredFieldsLocal(selected, ts);
+            const ok = await saveRequiredFieldsToSupabase(selected, ts);
             applyRequiredFieldMarkers();
             closeRequiredFieldsModal();
-            showToast('Campos obligatorios actualizados', 'success');
+            if (ok) {
+                showToast('Campos obligatorios guardados (local + nube)', 'success');
+            } else {
+                showToast('Guardado localmente. Revise conexión o restricción unique en meta.key', 'warning');
+            }
         }
 
         // ============================================================
