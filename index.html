@@ -4820,9 +4820,10 @@
 
         async function saveToSupabase(d) {
             try {
-                // Borrar e insertar (simple y atómico para este caso de uso)
+                // Documentos: reemplazo completo (tabla operativa)
                 await supabaseClient.from('documents').delete().neq('id', -1);
-                await supabaseClient.from('history').delete().neq('id', -1);
+                // Historial: NUNCA se borra aquí. Solo se hace upsert.
+                // Solo se elimina historial con clearHistory / deleteHistoryItem.
 
                 if (d.documents && d.documents.length > 0) {
                     const docsToInsert = d.documents.map(doc => ({
@@ -4856,14 +4857,22 @@
                     if (error) throw error;
                 }
 
+                // Historial: upsert (conservar y añadir; no borrar eventos existentes)
                 if (d.history && d.history.length > 0) {
-                    const histToInsert = d.history.map(h => ({
-                        id: h.id,
-                        text: h.text,
-                        timestamp: h.timestamp
+                    const histToUpsert = d.history.map(h => ({
+                        id: Number(h.id),
+                        text: h.text || '',
+                        timestamp: Number(h.timestamp) || Date.now()
                     }));
-                    const { error } = await supabaseClient.from('history').insert(histToInsert);
-                    if (error) throw error;
+                    // Upsert por lotes para evitar límites de payload
+                    const BATCH = 200;
+                    for (let i = 0; i < histToUpsert.length; i += BATCH) {
+                        const chunk = histToUpsert.slice(i, i + BATCH);
+                        const { error } = await supabaseClient
+                            .from('history')
+                            .upsert(chunk, { onConflict: 'id' });
+                        if (error) throw error;
+                    }
                 }
 
                 const catalogs = (d.catalogs && typeof d.catalogs === 'object') ? d.catalogs : getEmptyCatalogs();
@@ -4904,19 +4913,44 @@
         async function loadData() {
             // 1. Intentar Supabase (prioridad)
             const remote = await loadFromSupabase();
+            const local = loadFromLocalStorage();
+
             if (remote !== null) {
                 ensureCatalogs(remote);
-                // Guardar también en localStorage como respaldo
+                // Si Supabase trae historial vacío pero local tiene eventos, conservar y re-subir
+                // (protege contra pérdidas accidentales previas)
+                if ((!remote.history || remote.history.length === 0) &&
+                    local.history && local.history.length > 0) {
+                    console.warn('[History] Supabase sin historial; restaurando desde localStorage (' + local.history.length + ' eventos).');
+                    remote.history = local.history.slice();
+                    const maxId = remote.history.reduce((m, h) => Math.max(m, Number(h.id) || 0), 0);
+                    remote.historyNextId = Math.max(Number(remote.historyNextId) || 1, maxId + 1);
+                    // Re-subir en segundo plano
+                    saveToSupabase(remote).catch(() => {});
+                } else if (remote.history && local.history && local.history.length > remote.history.length) {
+                    // Fusionar por id: no perder eventos locales más recientes
+                    const byId = new Map();
+                    remote.history.forEach(h => byId.set(Number(h.id), h));
+                    local.history.forEach(h => {
+                        const id = Number(h.id);
+                        if (!byId.has(id)) byId.set(id, h);
+                    });
+                    remote.history = Array.from(byId.values()).sort((a, b) => (a.id || 0) - (b.id || 0));
+                    const maxId = remote.history.reduce((m, h) => Math.max(m, Number(h.id) || 0), 0);
+                    remote.historyNextId = Math.max(Number(remote.historyNextId) || 1, maxId + 1);
+                    saveToSupabase(remote).catch(() => {});
+                }
+                // Asegurar historyNextId coherente
+                if (remote.history && remote.history.length > 0) {
+                    const maxId = remote.history.reduce((m, h) => Math.max(m, Number(h.id) || 0), 0);
+                    remote.historyNextId = Math.max(Number(remote.historyNextId) || 1, maxId + 1);
+                }
                 saveToLocalStorage(remote);
                 return remote;
             }
 
             // 2. Fallback a localStorage
-            const local = loadFromLocalStorage();
-
-            // 3. Si hay datos locales y Supabase falló, intentar subirlos cuando sea posible
             if ((local.documents && local.documents.length > 0) || (local.history && local.history.length > 0)) {
-                // No bloqueamos; se intentará en el próximo save
                 console.log('[Sync] Datos locales detectados. Se sincronizarán en el próximo guardado.');
             }
 
@@ -6229,8 +6263,16 @@ function getFilteredData() {
                 confirmText: 'Eliminar'
             });
             if (!authorized) return;
-            data.history = data.history.filter(i => i.id !== id);
-            saveData(data);
+            const hid = Number(id);
+            data.history = data.history.filter(i => Number(i.id) !== hid);
+            // Eliminar solo este registro en Supabase (no tocar el resto)
+            try {
+                const { error } = await supabaseClient.from('history').delete().eq('id', hid);
+                if (error) console.warn('[History] No se pudo borrar en Supabase:', error.message);
+            } catch (e) {
+                console.warn('[History] Error al borrar en Supabase:', e);
+            }
+            await saveData(data);
             renderHistory();
             showToast('Evento eliminado', 'delete');
         }
@@ -6244,7 +6286,14 @@ function getFilteredData() {
             });
             if (!authorized) return;
             data.history = [];
-            saveData(data);
+            // Único punto que borra todo el historial en Supabase
+            try {
+                const { error } = await supabaseClient.from('history').delete().neq('id', -1);
+                if (error) console.warn('[History] No se pudo vaciar en Supabase:', error.message);
+            } catch (e) {
+                console.warn('[History] Error al vaciar en Supabase:', e);
+            }
+            await saveData(data);
             renderHistory();
             showToast('Historial eliminado', 'delete');
         }
@@ -7780,9 +7829,8 @@ function getFilteredData() {
 
         async function exportData() {
             if (!isManager) return;
-            // JSON con información completa del documento padre asociado
+            // JSON completo: documentos + historial + catálogos + contadores
             const payload = {
-                ...data,
                 documents: (data.documents || []).map(doc => {
                     const padreInfo = resolveDocumentoPadreInfo(doc.documentoPadre);
                     return {
@@ -7793,15 +7841,27 @@ function getFilteredData() {
                         documentoPadreEtiqueta: padreInfo.etiqueta
                     };
                 }),
+                history: (data.history || []).map(h => ({
+                    id: Number(h.id),
+                    text: h.text || '',
+                    timestamp: Number(h.timestamp) || Date.now()
+                })),
+                nextId: data.nextId || 1,
+                historyNextId: data.historyNextId || 1,
+                catalogs: data.catalogs || getEmptyCatalogs(),
+                catalogsExcluded: data.catalogsExcluded || getEmptyCatalogs(),
                 exportMeta: {
                     exportedAt: new Date().toISOString(),
                     totalDocuments: (data.documents || []).length,
-                    includesDocumentoPadre: true
+                    totalHistory: (data.history || []).length,
+                    includesDocumentoPadre: true,
+                    includesHistory: true
                 }
             };
             const contenido = JSON.stringify(payload, null, 2);
             const nombreArchivo = `Matriz_Documental_${new Date().toISOString().slice(0,10)}.json`;
             await guardarConDialogoAvanzado(contenido, nombreArchivo, 'application/json');
+            showToast(`Exportado: ${payload.documents.length} docs, ${payload.history.length} eventos`, 'success');
         }
 
         async function exportToExcel() {
@@ -7873,33 +7933,69 @@ function getFilteredData() {
             await guardarConDialogoAvanzado(csv, nombreArchivo, 'text/csv;charset=utf-8');
         }
 
-        function importData(e) {
+        async function importData(e) {
             if (!isManager) return;
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(ev) {
+            reader.onload = async function(ev) {
                 try {
                     const imp = JSON.parse(ev.target.result);
-                    if (imp.documents !== undefined && imp.history !== undefined) {
-                        if (Array.isArray(imp.documents)) {
-                            imp.documents = imp.documents.map(d => {
-                                const { documentoPadreNomenclatura, documentoPadreNombre, documentoPadreEtiqueta, ...rest } = d;
-                                return {
-                                    ...rest,
-                                    documentoPadre: rest.documentoPadre || documentoPadreNomenclatura || ''
-                                };
-                            });
-                        }
-                        delete imp.exportMeta;
-                        data = ensureCatalogs(imp);
-                        reindexIds();
-                        saveData(data);
-                        renderAll();
-                        showToast('Datos importados correctamente', 'success');
-                    } else {
-                        showToast('Formato inválido', 'warning');
+                    if (imp.documents === undefined) {
+                        showToast('Formato inválido: falta el arreglo documents', 'warning');
+                        return;
                     }
+                    const docs = Array.isArray(imp.documents) ? imp.documents.map(d => {
+                        const { documentoPadreNomenclatura, documentoPadreNombre, documentoPadreEtiqueta, ...rest } = d;
+                        return {
+                            ...rest,
+                            documentoPadre: rest.documentoPadre || documentoPadreNomenclatura || ''
+                        };
+                    }) : [];
+                    // Historial: recuperar si viene en el JSON; si no, conservar el actual o vacío
+                    let hist = [];
+                    if (Array.isArray(imp.history)) {
+                        hist = imp.history.map(h => ({
+                            id: Number(h.id) || 0,
+                            text: h.text || '',
+                            timestamp: Number(h.timestamp) || Date.now()
+                        })).filter(h => h.text);
+                    }
+                    const maxHistId = hist.reduce((m, h) => Math.max(m, h.id || 0), 0);
+                    const historyNextId = Math.max(
+                        Number(imp.historyNextId) || 1,
+                        maxHistId + 1,
+                        1
+                    );
+
+                    const nDocs = docs.length;
+                    const nHist = hist.length;
+                    const ok = await showConfirm({
+                        title: 'Importar JSON',
+                        message: `Se reemplazarán los datos actuales.\n\n• Documentos: ${nDocs}\n• Eventos de historial: ${nHist}\n\n¿Continuar?`,
+                        type: 'save',
+                        confirmText: 'Importar',
+                        cancelText: 'Cancelar'
+                    });
+                    if (!ok) return;
+
+                    data = ensureCatalogs({
+                        documents: docs,
+                        history: hist,
+                        nextId: Number(imp.nextId) || (docs.length + 1),
+                        historyNextId,
+                        catalogs: imp.catalogs,
+                        catalogsExcluded: imp.catalogsExcluded
+                    });
+                    reindexIds();
+                    // Reindex no toca history; asegurar historyNextId tras docs
+                    const maxH = (data.history || []).reduce((m, h) => Math.max(m, Number(h.id) || 0), 0);
+                    data.historyNextId = Math.max(Number(data.historyNextId) || 1, maxH + 1);
+
+                    await saveData(data);
+                    renderAll();
+                    renderHistory();
+                    showToast(`Importado: ${nDocs} docs, ${nHist} eventos de historial`, 'success');
                 } catch (err) {
                     showToast('Error: ' + err.message, 'warning');
                 }
@@ -8001,7 +8097,14 @@ function getFilteredData() {
             if (!authorized) return;
 
             data = getDefaultData();
-            saveData(data);
+            // Vaciar historial y documentos en Supabase de forma explícita
+            try {
+                await supabaseClient.from('history').delete().neq('id', -1);
+                await supabaseClient.from('documents').delete().neq('id', -1);
+            } catch (e) {
+                console.warn('[EliminarBD] Error limpiando Supabase:', e);
+            }
+            await saveData(data);
             generalFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
             currentFilters = {};
             if (dashStatusChart) { dashStatusChart.destroy(); dashStatusChart = null; }
