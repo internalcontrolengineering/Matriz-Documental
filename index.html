@@ -119,7 +119,7 @@
             gap: 14px;
         }
         .header-logo {
-            height: 70px;
+            height: 52px;
             width: auto;
             object-fit: contain;
             border-radius: 6px;
@@ -1149,6 +1149,12 @@
         .history-item .history-text {
             flex: 1;
             font-size: 9px;
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.35;
+        }
+        .history-scroll {
+            max-height: 220px;
         }
         .chart-annotation {
             text-align: center;
@@ -3899,7 +3905,7 @@
             await persistSharedSolicitudes(sharedSolicitudes);
             data.history.push({
                 id: data.historyNextId++,
-                text: `✏️ Solicitud "${name}" actualizada (${docs.length} docs, ${sol.expirationLabel})`,
+                text: `✏️ Solicitud "${name}" actualizada — ${docs.length} doc(s); columnas: ${(sol.columns || []).length}; Dashboard: ${sol.hideDashboard ? 'oculto' : 'visible'}; acceso: ${sol.expirationLabel}`,
                 timestamp: Date.now()
             });
             saveData(data);
@@ -6394,15 +6400,26 @@ function getFilteredData() {
         function renderHistory() {
             const container = document.getElementById('historyContainer');
             if (!container) return;
-            if (data.history.length === 0) { container.innerHTML =
-                    `<div class="empty-state"><i class="fas fa-history"></i><br>Sin eventos</div>`; return; }
-            container.innerHTML = data.history.slice().reverse().map(item => `
-                <div class="history-item">
-                    <span class="time">${new Date(item.timestamp).toLocaleString('es-ES', {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</span>
-                    <span class="history-text">${item.text}</span>
-                    <div class="history-actions"><i class="fas fa-trash" onclick="deleteHistoryItem(${item.id})" title="Eliminar"></i></div>
-                </div>
-            `).join('');
+            if (!data.history || data.history.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><br>Sin eventos</div>';
+                return;
+            }
+            const esc = (s) => String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+            container.innerHTML = data.history.slice().reverse().map(item => {
+                const full = esc(item.text);
+                const time = new Date(item.timestamp).toLocaleString('es-ES', {
+                    hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short'
+                });
+                return '<div class="history-item">' +
+                    '<span class="time">' + time + '</span>' +
+                    '<span class="history-text" title="' + full + '">' + full + '</span>' +
+                    '<div class="history-actions"><i class="fas fa-trash" onclick="deleteHistoryItem(' + item.id + ')" title="Eliminar"></i></div>' +
+                    '</div>';
+            }).join('');
         }
 
         async function deleteHistoryItem(id) {
@@ -6495,6 +6512,65 @@ function getFilteredData() {
             setTimeout(() => { document.querySelectorAll('.required-field').forEach(f => validateField(f)); }, 100);
         }
 
+
+        const DOC_FIELD_LABELS = {
+            unidad: 'Unidad de Negocio',
+            nomenclatura: 'Nomenclatura',
+            nombre: 'Nombre',
+            macro: 'Macroproceso',
+            area: 'Área',
+            departamento: 'Departamento',
+            tipo: 'Tipo de Documento',
+            categoria: 'Categoría',
+            clasificacion: 'Clasificación',
+            version: 'Versión',
+            fechaEmision: 'Fecha de emisión',
+            fechaActualizacion: 'Fecha de actualización',
+            fechaAutorizacion: 'Fecha de autorización',
+            fechaDifusion: 'Fecha de difusión',
+            hipervinculo: 'Hipervínculo',
+            comentarios: 'Comentarios',
+            status: 'Estado',
+            documentoPadre: 'Documento padre'
+        };
+
+        function normHistVal(v) {
+            if (v === null || v === undefined) return '';
+            return String(v).trim();
+        }
+
+        function describeDocumentChanges(before, after) {
+            if (!before || !after) return [];
+            const parts = [];
+            Object.keys(DOC_FIELD_LABELS).forEach(key => {
+                let oldV = before[key];
+                let newV = after[key];
+                // Unificar números (versión, etc.)
+                if (key === 'version') {
+                    oldV = (oldV === null || oldV === undefined || oldV === '') ? '' : String(Number(oldV));
+                    newV = (newV === null || newV === undefined || newV === '') ? '' : String(Number(newV));
+                    if (oldV === 'NaN') oldV = normHistVal(before[key]);
+                    if (newV === 'NaN') newV = normHistVal(after[key]);
+                } else {
+                    oldV = normHistVal(oldV);
+                    newV = normHistVal(newV);
+                }
+                if (oldV === newV) return;
+                const label = DOC_FIELD_LABELS[key];
+                const oldShow = oldV === '' ? '(vacío)' : oldV;
+                const newShow = newV === '' ? '(vacío)' : newV;
+                parts.push(label + ': "' + oldShow + '" → "' + newShow + '"');
+            });
+            return parts;
+        }
+
+        function formatHistoryChangeList(parts, maxItems) {
+            const max = maxItems || 12;
+            if (!parts || parts.length === 0) return 'sin cambios detectados en campos';
+            if (parts.length <= max) return parts.join('; ');
+            return parts.slice(0, max).join('; ') + '; … (+' + (parts.length - max) + ' más)';
+        }
+
         async function saveDocument() {
             if (!isManager) return;
             if (!validateAllFields()) {
@@ -6550,12 +6626,22 @@ function getFilteredData() {
             if (isEdit) {
                 const idx = data.documents.findIndex(d => d.id === editingId);
                 if (idx !== -1) {
+                    const before = { ...data.documents[idx] };
+                    // Comparar el estado anterior con el documento a guardar (ya con fechas formateadas)
+                    const changes = describeDocumentChanges(before, doc);
                     Object.assign(data.documents[idx], doc);
+                    const detail = formatHistoryChangeList(changes);
+                    const nom = doc.nomenclatura || before.nomenclatura || '';
+                    const nam = doc.nombre || before.nombre || '';
+                    const histText = changes.length
+                        ? ('✏️ ' + nom + ' (' + nam + ') actualizado — ' + detail)
+                        : ('✏️ ' + nom + ' (' + nam + ') actualizado — sin cambios en campos');
                     data.history.push({
                         id: data.historyNextId++,
-                        text: `✏️ ${doc.nomenclatura} (${doc.nombre}) actualizado`,
+                        text: histText,
                         timestamp: Date.now()
                     });
+                    console.log('[History]', histText);
                 }
             } else {
                 const maxId = data.documents.reduce((max, d) => Math.max(max, d.id), 0);
@@ -6563,7 +6649,7 @@ function getFilteredData() {
                 data.documents.push(doc);
                 data.history.push({
                     id: data.historyNextId++,
-                    text: `📄 ${doc.nomenclatura} (${doc.nombre}) creado`,
+                    text: `📄 ${doc.nomenclatura} (${doc.nombre}) creado — Unidad: ${doc.unidad || '(vacío)'}; Área: ${doc.area || '(vacío)'}; Tipo: ${doc.tipo || '(vacío)'}; Estado: ${doc.status || '(vacío)'}; Versión: ${doc.version || 1}`,
                     timestamp: Date.now()
                 });
             }
