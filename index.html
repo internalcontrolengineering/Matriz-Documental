@@ -119,7 +119,7 @@
             gap: 14px;
         }
         .header-logo {
-            height: 80px;
+            height: 52px;
             width: auto;
             object-fit: contain;
             border-radius: 6px;
@@ -3203,6 +3203,13 @@
                     </div>
                 </div>
                 <div>
+                    <label><i class="fas fa-window-maximize"></i> Pestañas</label>
+                    <div class="col-visibility-item" style="margin-top:4px;" onclick="this.querySelector('input').click()">
+                        <input type="checkbox" id="shareHideDashboard" onclick="event.stopPropagation()">
+                        <label for="shareHideDashboard">Ocultar pestaña Dashboard</label>
+                    </div>
+                </div>
+                <div>
                     <label>Columnas a mostrar</label>
                     <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
                         <button type="button" class="btn btn-sm" onclick="setAllShareColumns(true)"><i class="fas fa-check-double"></i> Todas</button>
@@ -3262,6 +3269,13 @@
                             <option value="h">Horas</option>
                             <option value="d">Días</option>
                         </select>
+                    </div>
+                </div>
+                <div>
+                    <label><i class="fas fa-window-maximize"></i> Pestañas</label>
+                    <div class="col-visibility-item" style="margin-top:4px;" onclick="this.querySelector('input').click()">
+                        <input type="checkbox" id="editSolHideDashboard" onclick="event.stopPropagation()">
+                        <label for="editSolHideDashboard">Ocultar pestaña Dashboard</label>
                     </div>
                 </div>
                 <div>
@@ -3434,6 +3448,8 @@
                     <label for="shareCol_${col.key}">${col.label}</label>
                 </div>
             `).join('');
+            const shareDash = document.getElementById('shareHideDashboard');
+            if (shareDash) shareDash.checked = false;
             // Always include id and nomenclatura conceptually - id shown by default
             const summary = document.getElementById('shareDocsSummary');
             const docs = data.documents.filter(d => selectedDocIds.has(d.id));
@@ -3495,6 +3511,7 @@
             if (!ok) return;
 
             const now = Date.now();
+            const hideDashboard = !!(document.getElementById('shareHideDashboard')?.checked);
             const solicitud = {
                 id: 'sol_' + now + '_' + Math.random().toString(36).slice(2, 8),
                 name: name,
@@ -3506,7 +3523,8 @@
                 expUnit: exp.unit,
                 documentIds: docs.map(d => d.id),
                 nomenclaturas: docs.map(d => d.nomenclatura),
-                columns: cols
+                columns: cols,
+                hideDashboard: hideDashboard
             };
 
             await loadSharedSolicitudes();
@@ -3634,6 +3652,8 @@
             document.getElementById('editSolExpAmount').value = sol.expAmount || 24;
             document.getElementById('editSolExpUnit').value = sol.expUnit || 'h';
             renderEditSolColumnsList(sol.columns || []);
+            const edDash = document.getElementById('editSolHideDashboard');
+            if (edDash) edDash.checked = !!sol.hideDashboard;
             renderEditSolDocsList();
             populateEditSolAddSelect();
             document.getElementById('editSolModal').classList.add('active');
@@ -3873,6 +3893,7 @@
             sol.documentIds = [..._editSolDocIds];
             sol.nomenclaturas = docs.map(d => d.nomenclatura);
             sol.columns = cols;
+            sol.hideDashboard = !!(document.getElementById('editSolHideDashboard')?.checked);
 
             await persistSharedSolicitudes(sharedSolicitudes);
             data.history.push({
@@ -4019,7 +4040,8 @@
                 columns: sol.columns || [],
                 documentIds: sol.documentIds || [],
                 nomenclaturas: sol.nomenclaturas || [],
-                expiresAt: sol.expiresAt
+                expiresAt: sol.expiresAt,
+                hideDashboard: !!sol.hideDashboard
             };
             await enterAppAsConsultor();
             showToast(`Vista compartida: ${sol.name}`, 'info');
@@ -4310,7 +4332,9 @@
                 document.body.classList.remove('hide-dashboard-stakeholder');
             } else {
                 document.body.classList.add('view-only');
-                if (hideDashboardForStakeholder) document.body.classList.add('hide-dashboard-stakeholder');
+                // Global consultor setting OR this shared solicitud
+                const hideDash = !!hideDashboardForStakeholder || !!(sharedView && sharedView.hideDashboard);
+                if (hideDash) document.body.classList.add('hide-dashboard-stakeholder');
                 else document.body.classList.remove('hide-dashboard-stakeholder');
             }
             const badge = document.getElementById('userBadge');
@@ -4325,7 +4349,7 @@
                 }
             }
             // Si el consultor está en Dashboard y se oculta, volver a Matriz
-            if (!isManager && hideDashboardForStakeholder) {
+            if (!isManager && (hideDashboardForStakeholder || (sharedView && sharedView.hideDashboard))) {
                 const dashTab = document.getElementById('tab-dashboard');
                 if (dashTab && dashTab.classList.contains('active')) {
                     switchTab('matriz');
@@ -8135,8 +8159,8 @@ function getFilteredData() {
         // ============================================================
         function switchTab(tab) {
             if (tab === 'batch' && !isManager) return;
-            if (tab === 'dashboard' && !isManager && hideDashboardForStakeholder) {
-                showToast('Dashboard no disponible para Consultor', 'warning');
+            if (tab === 'dashboard' && !isManager && (hideDashboardForStakeholder || (sharedView && sharedView.hideDashboard))) {
+                showToast('Dashboard no disponible para esta vista', 'warning');
                 return;
             }
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
