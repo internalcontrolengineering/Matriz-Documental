@@ -2888,10 +2888,49 @@
         </div>
 
         <div id="tab-dashboard" class="tab-content">
-            <div class="dashboard-filters">
-                <div class="grupo-filtro"><label><i class="fas fa-calendar"></i> Año</label><select id="dashboardFiltroAnio"><option value="todos">Todos</option></select></div>
-                <div class="grupo-filtro"><label><i class="fas fa-building"></i> Unidad</label><select id="dashboardFiltroUnidad"><option value="todos">Todas</option></select></div>
-                <div class="grupo-filtro"><label><i class="fas fa-users"></i> Área</label><select id="dashboardFiltroArea"><option value="todos">Todas</option></select></div>
+            <div class="dashboard-filters filtros-generales" id="dashboardFiltros">
+                <div class="grupo-filtro">
+                    <label><i class="fas fa-calendar"></i> Año</label>
+                    <div class="gen-filter-wrap" style="position:relative;">
+                        <button type="button" class="filter-select gen-filter-btn" id="btnDashFiltroAnio" data-dkey="anio" onclick="toggleDashDropdown('anio', event)">Todos</button>
+                        <div class="filter-dropdown" id="dropdown-dash-anio" style="display:none;">
+                            <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterDashDropdownOptions('anio', this.value)"></div>
+                            <div class="options-list" id="options-dash-anio"></div>
+                            <div class="dropdown-actions">
+                                <button class="btn btn-secondary" onclick="clearDashFilter('anio')">Limpiar</button>
+                                <button class="btn btn-primary" onclick="applyDashFilter('anio')">Aceptar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grupo-filtro">
+                    <label><i class="fas fa-building"></i> Unidad</label>
+                    <div class="gen-filter-wrap" style="position:relative;">
+                        <button type="button" class="filter-select gen-filter-btn" id="btnDashFiltroUnidad" data-dkey="unidad" onclick="toggleDashDropdown('unidad', event)">Todas</button>
+                        <div class="filter-dropdown" id="dropdown-dash-unidad" style="display:none;">
+                            <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterDashDropdownOptions('unidad', this.value)"></div>
+                            <div class="options-list" id="options-dash-unidad"></div>
+                            <div class="dropdown-actions">
+                                <button class="btn btn-secondary" onclick="clearDashFilter('unidad')">Limpiar</button>
+                                <button class="btn btn-primary" onclick="applyDashFilter('unidad')">Aceptar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grupo-filtro">
+                    <label><i class="fas fa-users"></i> Área</label>
+                    <div class="gen-filter-wrap" style="position:relative;">
+                        <button type="button" class="filter-select gen-filter-btn" id="btnDashFiltroArea" data-dkey="area" onclick="toggleDashDropdown('area', event)">Todas</button>
+                        <div class="filter-dropdown" id="dropdown-dash-area" style="display:none;">
+                            <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterDashDropdownOptions('area', this.value)"></div>
+                            <div class="options-list" id="options-dash-area"></div>
+                            <div class="dropdown-actions">
+                                <button class="btn btn-secondary" onclick="clearDashFilter('area')">Limpiar</button>
+                                <button class="btn btn-primary" onclick="applyDashFilter('area')">Aceptar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <button class="btn btn-sm" onclick="resetDashboardFilters()" title="Limpiar filtros del Dashboard"><i class="fas fa-undo-alt"></i></button>
             </div>
             <div class="stats-grid" id="dashboardStats">
@@ -4995,6 +5034,10 @@
         const GEN_FILTER_BTNS = { anio: 'btnFiltroAnio', unidad: 'btnFiltroUnidad', area: 'btnFiltroArea',
             departamento: 'btnFiltroDepartamento', categoria: 'btnFiltroCategoria' };
 
+        let dashboardFilters = { anio: [], unidad: [], area: [] };
+        const DASH_FILTER_DEFAULTS = { anio: 'Todos', unidad: 'Todas', area: 'Todas' };
+        const DASH_FILTER_BTNS = { anio: 'btnDashFiltroAnio', unidad: 'btnDashFiltroUnidad', area: 'btnDashFiltroArea' };
+
         const COLUMNS = [
             { key: 'id', label: 'ID' },
             { key: 'unidad', label: 'Unidad de Negocio' },
@@ -5846,7 +5889,8 @@ function getFilteredData() {
         function toggleDropdown(column, event) {
             event.stopPropagation();
             if (openDropdown && openDropdown !== column) {
-                if (String(openDropdown).startsWith('gen-')) closeGenDropdown(openDropdown.replace('gen-', ''));
+                if (String(openDropdown).startsWith('dash-')) closeDashDropdown(openDropdown.replace('dash-', ''));
+                else if (String(openDropdown).startsWith('gen-')) closeGenDropdown(openDropdown.replace('gen-', ''));
                 else closeDropdown(openDropdown);
             }
 
@@ -6032,7 +6076,8 @@ function getFilteredData() {
             event.stopPropagation();
             const fullKey = 'gen-' + key;
             if (openDropdown && openDropdown !== fullKey) {
-                if (String(openDropdown).startsWith('gen-')) closeGenDropdown(openDropdown.replace('gen-', ''));
+                if (String(openDropdown).startsWith('dash-')) closeDashDropdown(openDropdown.replace('dash-', ''));
+                else if (String(openDropdown).startsWith('gen-')) closeGenDropdown(openDropdown.replace('gen-', ''));
                 else closeDropdown(openDropdown);
             }
             const dropdown = document.getElementById(`dropdown-gen-${key}`);
@@ -7123,13 +7168,19 @@ function getFilteredData() {
 
         function getDashboardFilteredData() {
             let f = sharedView ? (getFilteredDataForShared() || []) : [...data.documents];
-            const anio = document.getElementById('dashboardFiltroAnio').value;
-            const unidad = document.getElementById('dashboardFiltroUnidad').value;
-            const area = document.getElementById('dashboardFiltroArea').value;
-            if (anio !== 'todos') f = f.filter(d => { if (!d.fechaActualizacion) return false; const p = d
-                    .fechaActualizacion.split('/'); return p.length === 3 && p[2] === anio; });
-            if (unidad !== 'todos') f = f.filter(d => d.unidad === unidad);
-            if (area !== 'todos') f = f.filter(d => d.area === area);
+            if (dashboardFilters.anio && dashboardFilters.anio.length > 0) {
+                f = f.filter(d => {
+                    if (!d.fechaActualizacion) return false;
+                    const p = d.fechaActualizacion.split('/');
+                    return p.length === 3 && dashboardFilters.anio.includes(p[2]);
+                });
+            }
+            if (dashboardFilters.unidad && dashboardFilters.unidad.length > 0) {
+                f = f.filter(d => dashboardFilters.unidad.includes(d.unidad));
+            }
+            if (dashboardFilters.area && dashboardFilters.area.length > 0) {
+                f = f.filter(d => dashboardFilters.area.includes(d.area));
+            }
             return f;
         }
 
@@ -7282,40 +7333,173 @@ function getFilteredData() {
                     ).join(''); }
         }
 
+        function getBaseDataForDashFilter(excludeKey) {
+            let baseData = sharedView ? (getFilteredDataForShared() || []) : [...(data.documents || [])];
+            if (excludeKey !== 'anio' && dashboardFilters.anio.length > 0) {
+                baseData = baseData.filter(d => {
+                    if (!d.fechaActualizacion) return false;
+                    const p = d.fechaActualizacion.split('/');
+                    return p.length === 3 && dashboardFilters.anio.includes(p[2]);
+                });
+            }
+            if (excludeKey !== 'unidad' && dashboardFilters.unidad.length > 0) {
+                baseData = baseData.filter(d => dashboardFilters.unidad.includes(d.unidad));
+            }
+            if (excludeKey !== 'area' && dashboardFilters.area.length > 0) {
+                baseData = baseData.filter(d => dashboardFilters.area.includes(d.area));
+            }
+            return baseData;
+        }
+
+        function getOptionsForDashFilter(key) {
+            const base = getBaseDataForDashFilter(key);
+            if (key === 'anio') return getYearsFromDocs(base);
+            if (key === 'unidad') return getUniqueValuesFromDocs('unidad', base);
+            if (key === 'area') return getUniqueValuesFromDocs('area', base);
+            return [];
+        }
+
+        function updateDashFilterButton(key) {
+            const btn = document.getElementById(DASH_FILTER_BTNS[key]);
+            if (!btn) return;
+            const selected = dashboardFilters[key] || [];
+            if (selected.length === 0) {
+                btn.textContent = DASH_FILTER_DEFAULTS[key];
+                btn.classList.remove('filter-active');
+            } else if (selected.length === 1) {
+                btn.textContent = selected[0];
+                btn.classList.add('filter-active');
+            } else {
+                btn.textContent = `${selected.length} sel.`;
+                btn.classList.add('filter-active');
+            }
+        }
+
+        function renderDashDropdownOptions(key, options, selected) {
+            const container = document.getElementById(`options-dash-${key}`);
+            if (!container) return;
+            if (options.length === 0) {
+                container.innerHTML =
+                    '<div style="padding:6px 10px;font-size:9px;color:var(--text-secondary);">Sin opciones</div>';
+                container.dataset.options = '[]';
+                return;
+            }
+            container.dataset.options = JSON.stringify(options);
+            container.innerHTML = options.map(opt => {
+                const checked = selected.includes(opt) ? 'checked' : '';
+                return `<div class="option-item">
+                    <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onDashOptionChange('${key}', this)">
+                    <label>${opt}</label>
+                </div>`;
+            }).join('');
+        }
+
+        function onDashOptionChange(key, checkbox) {}
+
+        function positionDashDropdown(key) {
+            const dropdown = document.getElementById(`dropdown-dash-${key}`);
+            const btn = document.getElementById(DASH_FILTER_BTNS[key]);
+            if (!dropdown || !btn) return;
+            const rect = btn.getBoundingClientRect();
+            const ddWidth = Math.max(180, Math.min(260, rect.width + 60));
+            let left = rect.left;
+            let top = rect.bottom + 2;
+            if (left + ddWidth > window.innerWidth - 8) {
+                left = Math.max(8, window.innerWidth - ddWidth - 8);
+            }
+            const estimatedHeight = 220;
+            if (top + estimatedHeight > window.innerHeight - 8 && rect.top > estimatedHeight) {
+                top = rect.top - estimatedHeight - 2;
+            }
+            dropdown.style.position = 'fixed';
+            dropdown.style.left = left + 'px';
+            dropdown.style.top = top + 'px';
+            dropdown.style.width = ddWidth + 'px';
+            dropdown.style.zIndex = '10000';
+        }
+
+        function toggleDashDropdown(key, event) {
+            event.stopPropagation();
+            const fullKey = 'dash-' + key;
+            if (openDropdown && openDropdown !== fullKey) {
+                if (String(openDropdown).startsWith('dash-')) closeDashDropdown(openDropdown.replace('dash-', ''));
+                else if (String(openDropdown).startsWith('gen-')) closeGenDropdown(openDropdown.replace('gen-', ''));
+                else closeDropdown(openDropdown);
+            }
+            const dropdown = document.getElementById(`dropdown-dash-${key}`);
+            if (!dropdown) return;
+            if (openDropdown === fullKey && dropdown.style.display === 'block') {
+                closeDashDropdown(key);
+                return;
+            }
+            dropdown.style.display = 'block';
+            openDropdown = fullKey;
+            positionDashDropdown(key);
+            bindDropdownScrollGuard(dropdown);
+            const opts = getOptionsForDashFilter(key);
+            const selected = dashboardFilters[key] || [];
+            renderDashDropdownOptions(key, opts, selected);
+            const searchBox = dropdown.querySelector('.search-box input');
+            if (searchBox) searchBox.value = '';
+        }
+
+        function closeDashDropdown(key) {
+            const dropdown = document.getElementById(`dropdown-dash-${key}`);
+            if (dropdown) {
+                dropdown.style.display = 'none';
+                dropdown.style.left = '';
+                dropdown.style.top = '';
+                dropdown.style.width = '';
+            }
+            if (openDropdown === 'dash-' + key) openDropdown = null;
+        }
+
+        function filterDashDropdownOptions(key, search) {
+            const container = document.getElementById(`options-dash-${key}`);
+            if (!container) return;
+            const options = JSON.parse(container.dataset.options || '[]');
+            const selected = dashboardFilters[key] || [];
+            const searchLower = search.toLowerCase().trim();
+            let filtered = options;
+            if (searchLower) filtered = options.filter(o => String(o).toLowerCase().includes(searchLower));
+            container.innerHTML = filtered.map(opt => {
+                const checked = selected.includes(opt) ? 'checked' : '';
+                return `<div class="option-item">
+                    <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onDashOptionChange('${key}', this)">
+                    <label>${opt}</label>
+                </div>`;
+            }).join('');
+        }
+
+        function applyDashFilter(key) {
+            const optionsList = document.getElementById(`options-dash-${key}`);
+            if (!optionsList) return;
+            const checkboxes = optionsList.querySelectorAll('input[type="checkbox"]');
+            const selected = [];
+            checkboxes.forEach(cb => { if (cb.checked) selected.push(cb.value); });
+            dashboardFilters[key] = selected;
+            closeDashDropdown(key);
+            updateDashFilterButton(key);
+            renderDashboard();
+        }
+
+        function clearDashFilter(key) {
+            dashboardFilters[key] = [];
+            closeDashDropdown(key);
+            updateDashFilterButton(key);
+            renderDashboard();
+        }
+
         function actualizarDashboardFilters() {
-            const all = data.documents;
-            const aSel = document.getElementById('dashboardFiltroAnio');
-            const years = getYearsFromDocs(all);
-            const ca = aSel.value;
-            aSel.innerHTML = '<option value="todos">Todos</option>';
-            years.forEach(y => { const o = document.createElement('option');
-                o.value = y;
-                o.textContent = y; if (y === ca) o.selected = true;
-                aSel.appendChild(o); });
-            const uSel = document.getElementById('dashboardFiltroUnidad');
-            const units = getUniqueValuesFromDocs('unidad', all);
-            const cu = uSel.value;
-            uSel.innerHTML = '<option value="todos">Todas</option>';
-            units.forEach(u => { const o = document.createElement('option');
-                o.value = u;
-                o.textContent = u; if (u === cu) o.selected = true;
-                uSel.appendChild(o); });
-            const arSel = document.getElementById('dashboardFiltroArea');
-            const areas = getUniqueValuesFromDocs('area', all);
-            const cAr = arSel.value;
-            arSel.innerHTML = '<option value="todos">Todas</option>';
-            areas.forEach(a => { const o = document.createElement('option');
-                o.value = a;
-                o.textContent = a; if (a === cAr) o.selected = true;
-                arSel.appendChild(o); });
+            Object.keys(DASH_FILTER_BTNS).forEach(key => updateDashFilterButton(key));
         }
 
         function resetDashboardFilters() {
-            document.getElementById('dashboardFiltroAnio').value = 'todos';
-            document.getElementById('dashboardFiltroUnidad').value = 'todos';
-            document.getElementById('dashboardFiltroArea').value = 'todos';
+            dashboardFilters = { anio: [], unidad: [], area: [] };
+            Object.keys(DASH_FILTER_BTNS).forEach(key => updateDashFilterButton(key));
             renderDashboard();
         }
+
 
         // ============================================================
         // BATCH
@@ -7883,7 +8067,9 @@ function getFilteredData() {
 
         function closeAnyOpenDropdown() {
             if (!openDropdown) return;
-            if (String(openDropdown).startsWith('gen-')) {
+            if (String(openDropdown).startsWith('dash-')) {
+                closeDashDropdown(openDropdown.replace('dash-', ''));
+            } else if (String(openDropdown).startsWith('gen-')) {
                 closeGenDropdown(openDropdown.replace('gen-', ''));
             } else {
                 closeDropdown(openDropdown);
@@ -7893,7 +8079,14 @@ function getFilteredData() {
         document.addEventListener('click', function(e) {
             if (!openDropdown) return;
             const target = e.target;
-            if (String(openDropdown).startsWith('gen-')) {
+            if (String(openDropdown).startsWith('dash-')) {
+                const key = openDropdown.replace('dash-', '');
+                const dropdown = document.getElementById(`dropdown-dash-${key}`);
+                const btn = document.getElementById(DASH_FILTER_BTNS[key]);
+                if (dropdown && !dropdown.contains(target) && btn && !btn.contains(target)) {
+                    closeDashDropdown(key);
+                }
+            } else if (String(openDropdown).startsWith('gen-')) {
                 const key = openDropdown.replace('gen-', '');
                 const dropdown = document.getElementById(`dropdown-gen-${key}`);
                 const btn = document.getElementById(GEN_FILTER_BTNS[key]);
@@ -7912,6 +8105,9 @@ function getFilteredData() {
         });
         function getOpenFilterDropdownEl() {
             if (!openDropdown) return null;
+            if (String(openDropdown).startsWith('dash-')) {
+                return document.getElementById('dropdown-dash-' + openDropdown.replace('dash-', ''));
+            }
             if (String(openDropdown).startsWith('gen-')) {
                 return document.getElementById('dropdown-gen-' + openDropdown.replace('gen-', ''));
             }
@@ -7920,7 +8116,9 @@ function getFilteredData() {
 
         function repositionOpenFilterDropdown() {
             if (!openDropdown) return;
-            if (String(openDropdown).startsWith('gen-')) {
+            if (String(openDropdown).startsWith('dash-')) {
+                positionDashDropdown(openDropdown.replace('dash-', ''));
+            } else if (String(openDropdown).startsWith('gen-')) {
                 positionGenDropdown(openDropdown.replace('gen-', ''));
             } else {
                 positionDropdown(openDropdown);
@@ -7995,9 +8193,7 @@ function getFilteredData() {
         // ============================================================
         // EVENT LISTENERS
         // ============================================================
-        document.getElementById('dashboardFiltroAnio').addEventListener('change', renderDashboard);
-        document.getElementById('dashboardFiltroUnidad').addEventListener('change', renderDashboard);
-        document.getElementById('dashboardFiltroArea').addEventListener('change', renderDashboard);
+
         document.getElementById('docModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
         document.getElementById('shareModal')?.addEventListener('click', function(e) { if (e.target === this) closeShareModal(); });
         document.getElementById('manageSolicitudesModal')?.addEventListener('click', function(e) { if (e.target === this) closeManageSolicitudesModal(); });
