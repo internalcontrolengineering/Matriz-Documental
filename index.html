@@ -1125,18 +1125,21 @@
             font-size: 9px;
         }
         .history-scroll {
-            max-height: 160px;
+            max-height: min(42vh, 420px);
+            min-height: 120px;
             overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 4px;
         }
         .history-item {
-            padding: 3px 6px;
-            border-radius: 4px;
-            margin-bottom: 2px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            margin-bottom: 4px;
             background: var(--bg-primary);
             font-size: 9px;
             display: flex;
-            align-items: center;
-            gap: 4px;
+            align-items: flex-start;
+            gap: 6px;
             border-left: 3px solid var(--blue);
             justify-content: space-between;
         }
@@ -1151,10 +1154,26 @@
             font-size: 9px;
             white-space: normal;
             word-break: break-word;
-            line-height: 1.35;
+            overflow-wrap: anywhere;
+            line-height: 1.45;
+            max-width: 100%;
         }
-        .history-scroll {
-            max-height: 220px;
+        .history-item .history-actions {
+            flex-shrink: 0;
+            padding-top: 1px;
+        }
+        .history-item .history-head {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .history-item .history-changes {
+            margin: 2px 0 0 0;
+            padding-left: 14px;
+            list-style: disc;
+        }
+        .history-item .history-changes li {
+            margin: 1px 0;
+            line-height: 1.4;
         }
         .chart-annotation {
             text-align: center;
@@ -6410,13 +6429,30 @@ function getFilteredData() {
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
             container.innerHTML = data.history.slice().reverse().map(item => {
-                const full = esc(item.text);
+                const raw = String(item.text || '');
                 const time = new Date(item.timestamp).toLocaleString('es-ES', {
                     hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short'
                 });
+                // Si hay detalle tras " — ", mostrar cada cambio en su línea
+                let bodyHtml;
+                const sep = ' — ';
+                const sepIdx = raw.indexOf(sep);
+                if (sepIdx !== -1) {
+                    const head = raw.slice(0, sepIdx);
+                    const detail = raw.slice(sepIdx + sep.length);
+                    const lines = detail.split(' · ').map(p => p.trim()).filter(Boolean);
+                    bodyHtml = '<div class="history-text" title="' + esc(raw) + '">' +
+                        '<div class="history-head">' + esc(head) + '</div>' +
+                        (lines.length
+                            ? '<ul class="history-changes">' + lines.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>'
+                            : '') +
+                        '</div>';
+                } else {
+                    bodyHtml = '<span class="history-text" title="' + esc(raw) + '">' + esc(raw) + '</span>';
+                }
                 return '<div class="history-item">' +
                     '<span class="time">' + time + '</span>' +
-                    '<span class="history-text" title="' + full + '">' + full + '</span>' +
+                    bodyHtml +
                     '<div class="history-actions"><i class="fas fa-trash" onclick="deleteHistoryItem(' + item.id + ')" title="Eliminar"></i></div>' +
                     '</div>';
             }).join('');
