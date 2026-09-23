@@ -2853,7 +2853,7 @@
                     <button class="btn btn-primary manager-only" onclick="openAddModal()"><i class="fas fa-plus"></i> Agregar</button>
                 </div>
                 <div class="matriz-search">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye documento origen y sus documenos relacionados)..." oninput="renderAll()">
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (Se incluirán los documentos de origen y los relacionados)..." oninput="renderAll()">
                     <button class="search-clear" onclick="document.getElementById('searchInput').value=''; renderAll();" title="Limpiar búsqueda"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="filtros-generales" id="filtrosGenerales">
@@ -2991,6 +2991,20 @@
                         </div>
                     </div>
                 </div>
+                <div class="grupo-filtro">
+                    <label><i class="fas fa-tags"></i> Categoría</label>
+                    <div class="gen-filter-wrap" style="position:relative;">
+                        <button type="button" class="filter-select gen-filter-btn" id="btnDashFiltroCategoria" data-dkey="categoria" onclick="toggleDashDropdown('categoria', event)">Todas</button>
+                        <div class="filter-dropdown" id="dropdown-dash-categoria" style="display:none;">
+                            <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterDashDropdownOptions('categoria', this.value)"></div>
+                            <div class="options-list" id="options-dash-categoria"></div>
+                            <div class="dropdown-actions">
+                                <button class="btn btn-secondary" onclick="clearDashFilter('categoria')">Limpiar</button>
+                                <button class="btn btn-primary" onclick="applyDashFilter('categoria')">Aceptar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <button class="btn btn-sm" onclick="resetDashboardFilters()" title="Limpiar filtros del Dashboard"><i class="fas fa-undo-alt"></i></button>
             </div>
             <div class="stats-grid" id="dashboardStats">
@@ -3114,7 +3128,7 @@
                     <label>Hipervínculo / Documento <span style="color:var(--red);">*</span></label>
                     <div class="hiper-field-wrap">
                         <div class="hiper-row">
-                            <input type="text" id="mHipervinculo" placeholder="Ingrese liga o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
+                            <input type="text" id="mHipervinculo" placeholder="Ingrese URL o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
                             <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('mHiperFile').click()" title="Subir documento"><i class="fas fa-upload"></i> Subir</button>
                             <button type="button" class="btn btn-sm" onclick="openHiperLink()" title="Abrir enlace"><i class="fas fa-external-link-alt"></i></button>
                             <button type="button" class="btn btn-sm" onclick="clearHiperLink()" title="Limpiar"><i class="fas fa-times"></i></button>
@@ -3159,7 +3173,7 @@
         <div class="modal" style="max-width:340px;">
             <h2><i class="fas fa-lock"></i> Contraseña requerida</h2>
             <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
-                Ingrese la contraseña de Control Interno para modificar los campos obligatorios.
+                Ingresa la contraseña de Control Interno para modificar los campos obligatorios.
             </p>
             <input type="password" id="reqConfigPassword" placeholder="Contraseña" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:12px;outline:none;margin-bottom:8px;">
             <div id="reqPassError" style="color:#dc2626;font-size:11px;min-height:16px;margin-bottom:6px;"></div>
@@ -3256,11 +3270,11 @@
             <div class="form-grid-modal" style="grid-template-columns:1fr;">
                 <div>
                     <label>Nombre de la solicitud <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="shareName" placeholder="Ingrese ID de la Solicitud" maxlength="80">
+                    <input type="text" id="shareName" placeholder="Ingrese el ID de la Solicitud" maxlength="80">
                 </div>
                 <div>
                     <label>Contraseña de acceso <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="sharePassword" placeholder="Ingrese la Contraseña para la Solicitud" maxlength="60" autocomplete="off">
+                    <input type="text" id="sharePassword" placeholder="Ingrese la Contraseña de la Solicitud" maxlength="60" autocomplete="off">
                 </div>
                 <div>
                     <label>Tiempo de expiración <span style="color:var(--red);">*</span></label>
@@ -5228,9 +5242,9 @@
         const GEN_FILTER_BTNS = { anio: 'btnFiltroAnio', unidad: 'btnFiltroUnidad', area: 'btnFiltroArea',
             departamento: 'btnFiltroDepartamento', categoria: 'btnFiltroCategoria' };
 
-        let dashboardFilters = { anio: [], unidad: [], area: [] };
-        const DASH_FILTER_DEFAULTS = { anio: 'Todos', unidad: 'Todas', area: 'Todas' };
-        const DASH_FILTER_BTNS = { anio: 'btnDashFiltroAnio', unidad: 'btnDashFiltroUnidad', area: 'btnDashFiltroArea' };
+        let dashboardFilters = { anio: [], unidad: [], area: [], categoria: [] };
+        const DASH_FILTER_DEFAULTS = { anio: 'Todos', unidad: 'Todas', area: 'Todas', categoria: 'Todas' };
+        const DASH_FILTER_BTNS = { anio: 'btnDashFiltroAnio', unidad: 'btnDashFiltroUnidad', area: 'btnDashFiltroArea', categoria: 'btnDashFiltroCategoria' };
 
         const COLUMNS = [
             { key: 'id', label: 'ID' },
@@ -7663,6 +7677,9 @@ function getFilteredData() {
             if (dashboardFilters.area && dashboardFilters.area.length > 0) {
                 f = f.filter(d => dashboardFilters.area.includes(d.area));
             }
+            if (dashboardFilters.categoria && dashboardFilters.categoria.length > 0) {
+                f = f.filter(d => dashboardFilters.categoria.includes(d.categoria));
+            }
             return f;
         }
 
@@ -7830,6 +7847,9 @@ function getFilteredData() {
             if (excludeKey !== 'area' && dashboardFilters.area.length > 0) {
                 baseData = baseData.filter(d => dashboardFilters.area.includes(d.area));
             }
+            if (excludeKey !== 'categoria' && dashboardFilters.categoria && dashboardFilters.categoria.length > 0) {
+                baseData = baseData.filter(d => dashboardFilters.categoria.includes(d.categoria));
+            }
             return baseData;
         }
 
@@ -7838,6 +7858,7 @@ function getFilteredData() {
             if (key === 'anio') return getYearsFromDocs(base);
             if (key === 'unidad') return getUniqueValuesFromDocs('unidad', base);
             if (key === 'area') return getUniqueValuesFromDocs('area', base);
+            if (key === 'categoria') return getUniqueValuesFromDocs('categoria', base);
             return [];
         }
 
@@ -7977,7 +7998,7 @@ function getFilteredData() {
         }
 
         function resetDashboardFilters() {
-            dashboardFilters = { anio: [], unidad: [], area: [] };
+            dashboardFilters = { anio: [], unidad: [], area: [], categoria: [] };
             Object.keys(DASH_FILTER_BTNS).forEach(key => updateDashFilterButton(key));
             renderDashboard();
         }
