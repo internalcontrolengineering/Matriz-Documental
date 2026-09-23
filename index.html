@@ -2087,6 +2087,27 @@
             cursor: pointer;
             flex-shrink: 0;
         }
+        .select-all-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-size: 9px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .select-all-btn.visible { display: inline-flex; }
+        .select-all-btn:hover {
+            border-color: var(--blue);
+            color: var(--blue);
+            background: var(--filter-active-bg);
+        }
         .select-mode-toggle:hover {
             border-color: var(--blue);
             color: var(--blue);
@@ -2608,11 +2629,33 @@
             padding: 8px 12px;
             margin-bottom: 10px;
             display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 11px;
+            color: #3730a3;
+        }
+        .shared-banner .sb-main {
+            display: flex;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            font-size: 11px;
-            color: #3730a3;
+        }
+        .shared-banner .sb-docs {
+            font-size: 10px;
+            opacity: 0.9;
+            line-height: 1.35;
+            padding-left: 22px;
+            word-break: break-word;
+        }
+        .shared-banner .sb-count {
+            margin-left: auto;
+            font-weight: 600;
+            font-size: 10px;
+        }
+        [data-theme="dark"] .shared-banner {
+            background: linear-gradient(90deg, #1e1b4b, #312e81);
+            border-color: #4338ca;
+            color: #c7d2fe;
         }
         [data-theme="dark"] .shared-banner {
             background: linear-gradient(90deg, #1e1b4b, #312e81);
@@ -2807,6 +2850,94 @@
             color: var(--text-secondary);
             margin-top: -2px;
         }
+
+        .bulk-filter-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            align-items: stretch;
+        }
+        .bulk-filter-grid .grupo-filtro {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+            flex: 1 1 128px;
+            min-width: 120px;
+            max-width: 168px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .bulk-filter-grid .grupo-filtro label {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            padding: 6px 8px 4px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            border-left: 3px solid var(--blue);
+            line-height: 1.2;
+        }
+        .bulk-filter-grid .grupo-filtro:nth-child(1) label { border-left-color: #2563eb; }
+        .bulk-filter-grid .grupo-filtro:nth-child(2) label { border-left-color: #8b5cf6; }
+        .bulk-filter-grid .grupo-filtro:nth-child(3) label { border-left-color: #14b8a6; }
+        .bulk-filter-grid .grupo-filtro:nth-child(4) label { border-left-color: #f97316; }
+        .bulk-filter-grid .grupo-filtro:nth-child(5) label { border-left-color: #ec4899; }
+        .bulk-filter-grid .grupo-filtro .gen-filter-wrap {
+            padding: 6px 8px 8px;
+            background: var(--bg-secondary);
+        }
+        .bulk-filter-grid .gen-filter-btn {
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 10px;
+        }
+        .bulk-filter-grid .grupo-filtro:has(.gen-filter-btn.filter-active) {
+            border-color: var(--filter-active-border);
+            box-shadow: 0 0 0 1px var(--filter-active-border);
+        }
+        .bulk-filter-grid .grupo-filtro:has(.gen-filter-btn.filter-active) label {
+            background: var(--filter-active-bg);
+            color: var(--blue);
+        }
+        .bulk-filter-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .bulk-live-count {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--blue);
+            background: var(--filter-active-bg);
+            border: 1px solid var(--filter-active-border);
+            border-radius: 50px;
+            padding: 3px 10px;
+            white-space: nowrap;
+        }
+        .bulk-live-count.empty {
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            border-color: var(--border-color);
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -2853,7 +2984,7 @@
                     <button class="btn btn-primary manager-only" onclick="openAddModal()"><i class="fas fa-plus"></i> Agregar</button>
                 </div>
                 <div class="matriz-search">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (Se incluirán los documentos de origen y los relacionados)..." oninput="renderAll()">
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye el documento origen y sus documentos relacionados)..." oninput="renderAll()">
                     <button class="search-clear" onclick="document.getElementById('searchInput').value=''; renderAll();" title="Limpiar búsqueda"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="filtros-generales" id="filtrosGenerales">
@@ -3128,7 +3259,7 @@
                     <label>Hipervínculo / Documento <span style="color:var(--red);">*</span></label>
                     <div class="hiper-field-wrap">
                         <div class="hiper-row">
-                            <input type="text" id="mHipervinculo" placeholder="Ingrese URL o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
+                            <input type="text" id="mHipervinculo" placeholder="https://… o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
                             <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('mHiperFile').click()" title="Subir documento"><i class="fas fa-upload"></i> Subir</button>
                             <button type="button" class="btn btn-sm" onclick="openHiperLink()" title="Abrir enlace"><i class="fas fa-external-link-alt"></i></button>
                             <button type="button" class="btn btn-sm" onclick="clearHiperLink()" title="Limpiar"><i class="fas fa-times"></i></button>
@@ -3306,8 +3437,88 @@
                     <div class="share-col-list" id="shareColumnsList"></div>
                 </div>
                 <div>
-                    <label>Documentos seleccionados</label>
-                    <div id="shareDocsSummary" style="font-size:10px;color:var(--text-secondary);padding:6px 8px;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);max-height:80px;overflow-y:auto;"></div>
+                    <label><i class="fas fa-filter"></i> Agregar por filtros</label>
+                    <p style="font-size:9px;color:var(--text-secondary);margin:0 0 6px 0;">Vaya aceptando filtros en orden; la lista se ajusta sola con el cruce de todos los activos (Año + Unidad + Área…).</p>
+                    <div class="bulk-filter-grid" id="shareBulkFilters">
+                        <div class="grupo-filtro">
+                            <label>Año</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnShareBulkAnio" onclick="toggleShareBulkDropdown('anio', event)">Todos</button>
+                                <div class="filter-dropdown" id="dropdown-sharebulk-anio" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterShareBulkOptions('anio', this.value)"></div>
+                                    <div class="options-list" id="options-sharebulk-anio"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearShareBulkFilter('anio')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyShareBulkFilter('anio')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Unidad</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnShareBulkUnidad" onclick="toggleShareBulkDropdown('unidad', event)">Todas</button>
+                                <div class="filter-dropdown" id="dropdown-sharebulk-unidad" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterShareBulkOptions('unidad', this.value)"></div>
+                                    <div class="options-list" id="options-sharebulk-unidad"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearShareBulkFilter('unidad')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyShareBulkFilter('unidad')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Área</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnShareBulkArea" onclick="toggleShareBulkDropdown('area', event)">Todas</button>
+                                <div class="filter-dropdown" id="dropdown-sharebulk-area" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterShareBulkOptions('area', this.value)"></div>
+                                    <div class="options-list" id="options-sharebulk-area"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearShareBulkFilter('area')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyShareBulkFilter('area')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Depto.</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnShareBulkDepartamento" onclick="toggleShareBulkDropdown('departamento', event)">Todos</button>
+                                <div class="filter-dropdown" id="dropdown-sharebulk-departamento" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterShareBulkOptions('departamento', this.value)"></div>
+                                    <div class="options-list" id="options-sharebulk-departamento"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearShareBulkFilter('departamento')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyShareBulkFilter('departamento')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Categoría</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnShareBulkCategoria" onclick="toggleShareBulkDropdown('categoria', event)">Todas</button>
+                                <div class="filter-dropdown" id="dropdown-sharebulk-categoria" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterShareBulkOptions('categoria', this.value)"></div>
+                                    <div class="options-list" id="options-sharebulk-categoria"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearShareBulkFilter('categoria')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyShareBulkFilter('categoria')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bulk-filter-actions">
+                        <span class="bulk-live-count empty" id="shareBulkLiveCount">0 documentos</span>
+                        <button type="button" class="btn btn-sm" onclick="clearShareBulkAll()"><i class="fas fa-eraser"></i> Limpiar filtros</button>
+                    </div>
+                </div>
+                <div>
+                    <label>Documentos seleccionados <span id="shareDocsCountLabel" style="font-weight:500;color:var(--blue);"></span></label>
+                    <div id="shareDocsSummary" style="font-size:10px;color:var(--text-secondary);padding:6px 8px;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color);max-height:100px;overflow-y:auto;"></div>
                 </div>
             </div>
             <div class="modal-actions" style="margin-top:14px;">
@@ -3373,6 +3584,86 @@
                         <button type="button" class="btn btn-sm" onclick="setAllEditSolColumns(false)"><i class="fas fa-eraser"></i> Ninguna</button>
                     </div>
                     <div class="share-col-list" id="editSolColumnsList"></div>
+                </div>
+                <div>
+                    <label><i class="fas fa-filter"></i> Agregar por filtros</label>
+                    <p style="font-size:9px;color:var(--text-secondary);margin:0 0 6px 0;">Vaya aceptando filtros; la lista se ajusta sola con el cruce de todos los activos.</p>
+                    <div class="bulk-filter-grid" id="editSolBulkFilters">
+                        <div class="grupo-filtro">
+                            <label>Año</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnEditBulkAnio" onclick="toggleEditBulkDropdown('anio', event)">Todos</button>
+                                <div class="filter-dropdown" id="dropdown-editbulk-anio" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterEditBulkOptions('anio', this.value)"></div>
+                                    <div class="options-list" id="options-editbulk-anio"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearEditBulkFilter('anio')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyEditBulkFilter('anio')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Unidad</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnEditBulkUnidad" onclick="toggleEditBulkDropdown('unidad', event)">Todas</button>
+                                <div class="filter-dropdown" id="dropdown-editbulk-unidad" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterEditBulkOptions('unidad', this.value)"></div>
+                                    <div class="options-list" id="options-editbulk-unidad"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearEditBulkFilter('unidad')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyEditBulkFilter('unidad')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Área</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnEditBulkArea" onclick="toggleEditBulkDropdown('area', event)">Todas</button>
+                                <div class="filter-dropdown" id="dropdown-editbulk-area" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterEditBulkOptions('area', this.value)"></div>
+                                    <div class="options-list" id="options-editbulk-area"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearEditBulkFilter('area')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyEditBulkFilter('area')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Depto.</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnEditBulkDepartamento" onclick="toggleEditBulkDropdown('departamento', event)">Todos</button>
+                                <div class="filter-dropdown" id="dropdown-editbulk-departamento" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterEditBulkOptions('departamento', this.value)"></div>
+                                    <div class="options-list" id="options-editbulk-departamento"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearEditBulkFilter('departamento')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyEditBulkFilter('departamento')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grupo-filtro">
+                            <label>Categoría</label>
+                            <div class="gen-filter-wrap" style="position:relative;">
+                                <button type="button" class="filter-select gen-filter-btn" id="btnEditBulkCategoria" onclick="toggleEditBulkDropdown('categoria', event)">Todas</button>
+                                <div class="filter-dropdown" id="dropdown-editbulk-categoria" style="display:none;">
+                                    <div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterEditBulkOptions('categoria', this.value)"></div>
+                                    <div class="options-list" id="options-editbulk-categoria"></div>
+                                    <div class="dropdown-actions">
+                                        <button class="btn btn-secondary" onclick="clearEditBulkFilter('categoria')">Limpiar</button>
+                                        <button class="btn btn-primary" onclick="applyEditBulkFilter('categoria')">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bulk-filter-actions">
+                        <span class="bulk-live-count empty" id="editBulkLiveCount">0 documentos</span>
+                        <button type="button" class="btn btn-sm" onclick="clearEditBulkAll()"><i class="fas fa-eraser"></i> Limpiar filtros</button>
+                    </div>
                 </div>
                 <div>
                     <label>Documentos incluidos</label>
@@ -3497,6 +3788,327 @@
             }
         }
 
+
+        let shareBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+        let editBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+        const SHARE_BULK_BTNS = {
+            anio: 'btnShareBulkAnio', unidad: 'btnShareBulkUnidad', area: 'btnShareBulkArea',
+            departamento: 'btnShareBulkDepartamento', categoria: 'btnShareBulkCategoria'
+        };
+        const EDIT_BULK_BTNS = {
+            anio: 'btnEditBulkAnio', unidad: 'btnEditBulkUnidad', area: 'btnEditBulkArea',
+            departamento: 'btnEditBulkDepartamento', categoria: 'btnEditBulkCategoria'
+        };
+        const BULK_DEFAULTS = { anio: 'Todos', unidad: 'Todas', area: 'Todas', departamento: 'Todos', categoria: 'Todas' };
+
+        function getBulkFilterOptions(key, currentFilters, excludeKey) {
+            let base = [...(data.documents || [])];
+            if (excludeKey !== 'anio' && (currentFilters.anio||[]).length) {
+                base = base.filter(d => {
+                    if (!d.fechaActualizacion) return false;
+                    const p = String(d.fechaActualizacion).split('/');
+                    return p.length === 3 && currentFilters.anio.includes(p[2]);
+                });
+            }
+            if (excludeKey !== 'unidad' && (currentFilters.unidad||[]).length)
+                base = base.filter(d => currentFilters.unidad.includes(d.unidad));
+            if (excludeKey !== 'area' && (currentFilters.area||[]).length)
+                base = base.filter(d => currentFilters.area.includes(d.area));
+            if (excludeKey !== 'departamento' && (currentFilters.departamento||[]).length)
+                base = base.filter(d => currentFilters.departamento.includes(d.departamento));
+            if (excludeKey !== 'categoria' && (currentFilters.categoria||[]).length)
+                base = base.filter(d => currentFilters.categoria.includes(d.categoria));
+            if (key === 'anio') return getYearsFromDocs(base);
+            return getUniqueValuesFromDocs(key, base);
+        }
+
+        function docsMatchingBulkFilters(filters) {
+            const any = ['anio','unidad','area','departamento','categoria'].some(k => (filters[k]||[]).length > 0);
+            if (!any) return [];
+            let f = [...(data.documents || [])];
+            if ((filters.anio||[]).length) {
+                f = f.filter(d => {
+                    const dates = [d.fechaActualizacion, d.fechaEmision, d.fechaAutorizacion, d.fechaDifusion];
+                    return dates.some(fd => {
+                        if (!fd) return false;
+                        const p = String(fd).split('/');
+                        return p.length === 3 && filters.anio.includes(p[2]);
+                    });
+                });
+            }
+            if ((filters.unidad||[]).length) f = f.filter(d => filters.unidad.includes(d.unidad));
+            if ((filters.area||[]).length) f = f.filter(d => filters.area.includes(d.area));
+            if ((filters.departamento||[]).length) f = f.filter(d => filters.departamento.includes(d.departamento));
+            if ((filters.categoria||[]).length) f = f.filter(d => filters.categoria.includes(d.categoria));
+            return f;
+        }
+
+        function updateBulkFilterButton(key, filters, btnMap) {
+            const btn = document.getElementById(btnMap[key]);
+            if (!btn) return;
+            const selected = filters[key] || [];
+            if (selected.length === 0) {
+                btn.textContent = BULK_DEFAULTS[key];
+                btn.classList.remove('filter-active');
+            } else if (selected.length === 1) {
+                btn.textContent = selected[0];
+                btn.classList.add('filter-active');
+            } else {
+                btn.textContent = selected.length + ' sel.';
+                btn.classList.add('filter-active');
+            }
+        }
+
+        function renderBulkDropdownOptions(prefix, key, options, selected) {
+            const container = document.getElementById('options-' + prefix + '-' + key);
+            if (!container) return;
+            container.dataset.options = JSON.stringify(options || []);
+            if (!options || !options.length) {
+                container.innerHTML = '<div style="padding:6px 10px;font-size:9px;color:var(--text-secondary);">Sin opciones</div>';
+                return;
+            }
+            container.innerHTML = options.map(opt => {
+                const checked = selected.includes(opt) ? 'checked' : '';
+                return '<div class="option-item"><input type="checkbox" value="' +
+                    String(opt).replace(/"/g, '&quot;') + '" ' + checked + '><label>' + opt + '</label></div>';
+            }).join('');
+        }
+
+        function positionBulkDropdown(prefix, key, btnMap) {
+            const dropdown = document.getElementById('dropdown-' + prefix + '-' + key);
+            const btn = document.getElementById(btnMap[key]);
+            if (!dropdown || !btn) return;
+            const rect = btn.getBoundingClientRect();
+            const ddWidth = Math.max(180, Math.min(260, rect.width + 60));
+            let left = rect.left;
+            if (left + ddWidth > window.innerWidth - 8) left = Math.max(8, window.innerWidth - ddWidth - 8);
+            dropdown.style.position = 'fixed';
+            dropdown.style.left = left + 'px';
+            dropdown.style.top = (rect.bottom + 2) + 'px';
+            dropdown.style.width = ddWidth + 'px';
+            dropdown.style.zIndex = '10050';
+        }
+
+        function toggleBulkDropdown(prefix, key, event, filters, btnMap) {
+            event.stopPropagation();
+            const fullKey = prefix + '-' + key;
+            if (openDropdown && openDropdown !== fullKey) closeAnyOpenDropdown();
+            const dropdown = document.getElementById('dropdown-' + prefix + '-' + key);
+            if (!dropdown) return;
+            if (openDropdown === fullKey && dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+                openDropdown = null;
+                return;
+            }
+            dropdown.style.display = 'block';
+            openDropdown = fullKey;
+            positionBulkDropdown(prefix, key, btnMap);
+            bindDropdownScrollGuard(dropdown);
+            renderBulkDropdownOptions(prefix, key, getBulkFilterOptions(key, filters, key), filters[key] || []);
+            const searchBox = dropdown.querySelector('.search-box input');
+            if (searchBox) searchBox.value = '';
+        }
+
+        function closeBulkDropdown(prefix, key) {
+            const dropdown = document.getElementById('dropdown-' + prefix + '-' + key);
+            if (dropdown) dropdown.style.display = 'none';
+            if (openDropdown === prefix + '-' + key) openDropdown = null;
+        }
+
+        function filterBulkOptionsUI(prefix, key, search, filters) {
+            const container = document.getElementById('options-' + prefix + '-' + key);
+            if (!container) return;
+            const options = JSON.parse(container.dataset.options || '[]');
+            const q = (search || '').toLowerCase().trim();
+            const filtered = q ? options.filter(o => String(o).toLowerCase().includes(q)) : options;
+            renderBulkDropdownOptions(prefix, key, filtered, filters[key] || []);
+            container.dataset.options = JSON.stringify(options);
+        }
+
+        function applyBulkFilterSelection(prefix, key, filters, btnMap, onApply) {
+            const list = document.getElementById('options-' + prefix + '-' + key);
+            if (!list) return;
+            const selected = [];
+            list.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => selected.push(cb.value));
+            filters[key] = selected;
+            closeBulkDropdown(prefix, key);
+            updateBulkFilterButton(key, filters, btnMap);
+            if (typeof onApply === 'function') onApply();
+        }
+
+        function clearBulkFilterSelection(prefix, key, filters, btnMap) {
+            filters[key] = [];
+            closeBulkDropdown(prefix, key);
+            updateBulkFilterButton(key, filters, btnMap);
+        }
+
+        function toggleShareBulkDropdown(key, event) {
+            toggleBulkDropdown('sharebulk', key, event, shareBulkFilters, SHARE_BULK_BTNS);
+        }
+        function filterShareBulkOptions(key, val) {
+            filterBulkOptionsUI('sharebulk', key, val, shareBulkFilters);
+        }
+
+        function updateShareBulkLiveCount(n) {
+            const el = document.getElementById('shareBulkLiveCount');
+            if (!el) return;
+            const any = ['anio','unidad','area','departamento','categoria'].some(k => (shareBulkFilters[k]||[]).length > 0);
+            if (!any) {
+                el.textContent = 'Sin filtros activos';
+                el.classList.add('empty');
+                return;
+            }
+            el.textContent = n + ' documento' + (n === 1 ? '' : 's');
+            el.classList.toggle('empty', n === 0);
+        }
+
+        /** Tras aceptar/limpiar un filtro: recalcula el cruce (AND) y ajusta la selección. */
+        function syncShareDocsFromBulkFilters(silent) {
+            const any = ['anio','unidad','area','departamento','categoria'].some(k => (shareBulkFilters[k]||[]).length > 0);
+            if (!any) {
+                updateShareBulkLiveCount(0);
+                refreshShareDocsSummary();
+                updateShareButtonVisibility();
+                return;
+            }
+            const matched = docsMatchingBulkFilters(shareBulkFilters);
+            selectedDocIds.clear();
+            matched.forEach(d => {
+                const id = Number(d.id);
+                if (id) selectedDocIds.add(id);
+            });
+            updateShareBulkLiveCount(matched.length);
+            refreshShareDocsSummary();
+            updateShareButtonVisibility();
+            if (!silent) {
+                if (matched.length === 0) showToast('Ningún documento con esta combinación', 'warning');
+                else showToast(matched.length + ' documento(s) con los filtros activos', 'success', 1800);
+            }
+        }
+
+        function applyShareBulkFilter(key) {
+            applyBulkFilterSelection('sharebulk', key, shareBulkFilters, SHARE_BULK_BTNS, () => {
+                syncShareDocsFromBulkFilters(false);
+            });
+        }
+
+        function clearShareBulkFilter(key) {
+            clearBulkFilterSelection('sharebulk', key, shareBulkFilters, SHARE_BULK_BTNS);
+            syncShareDocsFromBulkFilters(false);
+        }
+
+        function clearShareBulkAll() {
+            shareBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+            Object.keys(SHARE_BULK_BTNS).forEach(k => updateBulkFilterButton(k, shareBulkFilters, SHARE_BULK_BTNS));
+            updateShareBulkLiveCount(0);
+            showToast('Filtros limpiados (la selección manual de la matriz se mantiene si la había)', 'info', 2000);
+        }
+        function refreshShareDocsSummary() {
+            const summary = document.getElementById('shareDocsSummary');
+            const countLabel = document.getElementById('shareDocsCountLabel');
+            const docs = (data.documents || []).filter(d => selectedDocIds.has(Number(d.id)));
+            if (countLabel) countLabel.textContent = '(' + docs.length + ')';
+            if (!summary) return;
+            if (!docs.length) {
+                summary.innerHTML = '<span style="opacity:0.7;">Ningún documento. Use la matriz o los filtros.</span>';
+                return;
+            }
+            summary.innerHTML = docs.map(d =>
+                '<div style="padding:2px 0;">• ' +
+                String(d.nomenclatura||'').replace(/</g,'&lt;') + ' ' +
+                String(d.nombre||'').replace(/</g,'&lt;') + '</div>'
+            ).join('');
+        }
+
+        function toggleEditBulkDropdown(key, event) {
+            toggleBulkDropdown('editbulk', key, event, editBulkFilters, EDIT_BULK_BTNS);
+        }
+        function filterEditBulkOptions(key, val) {
+            filterBulkOptionsUI('editbulk', key, val, editBulkFilters);
+        }
+
+        function updateEditBulkLiveCount(n) {
+            const el = document.getElementById('editBulkLiveCount');
+            if (!el) return;
+            const any = ['anio','unidad','area','departamento','categoria'].some(k => (editBulkFilters[k]||[]).length > 0);
+            if (!any) {
+                el.textContent = 'Sin filtros activos';
+                el.classList.add('empty');
+                return;
+            }
+            el.textContent = n + ' documento' + (n === 1 ? '' : 's') + ' (cruce)';
+            el.classList.toggle('empty', n === 0);
+        }
+
+        function syncEditDocsFromBulkFilters(silent) {
+            const any = ['anio','unidad','area','departamento','categoria'].some(k => (editBulkFilters[k]||[]).length > 0);
+            if (!any) {
+                updateEditBulkLiveCount(0);
+                return;
+            }
+            const matched = docsMatchingBulkFilters(editBulkFilters);
+            // Reemplazar la lista por el cruce actual (ajustable filtro a filtro)
+            _editSolDocIds = matched.map(d => Number(d.id)).filter(Boolean);
+            updateEditBulkLiveCount(matched.length);
+            renderEditSolDocsList();
+            if (!silent) {
+                if (matched.length === 0) showToast('Ningún documento con esta combinación', 'warning');
+                else showToast(matched.length + ' documento(s) con los filtros activos', 'success', 1800);
+            }
+        }
+
+        function applyEditBulkFilter(key) {
+            applyBulkFilterSelection('editbulk', key, editBulkFilters, EDIT_BULK_BTNS, () => {
+                syncEditDocsFromBulkFilters(false);
+            });
+        }
+
+        function clearEditBulkFilter(key) {
+            clearBulkFilterSelection('editbulk', key, editBulkFilters, EDIT_BULK_BTNS);
+            syncEditDocsFromBulkFilters(false);
+        }
+
+        function clearEditBulkAll() {
+            editBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+            Object.keys(EDIT_BULK_BTNS).forEach(k => updateBulkFilterButton(k, editBulkFilters, EDIT_BULK_BTNS));
+            updateEditBulkLiveCount(0);
+            showToast('Filtros limpiados', 'info', 1500);
+        }
+
+        function resetShareBulkFiltersUI() {
+            shareBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+            Object.keys(SHARE_BULK_BTNS).forEach(k => updateBulkFilterButton(k, shareBulkFilters, SHARE_BULK_BTNS));
+            updateShareBulkLiveCount(0);
+        }
+        function resetEditBulkFiltersUI() {
+            editBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+            Object.keys(EDIT_BULK_BTNS).forEach(k => updateBulkFilterButton(k, editBulkFilters, EDIT_BULK_BTNS));
+            updateEditBulkLiveCount(0);
+        }
+
+        async function exitSharedViewToConsultorGateway(reasonMsg) {
+            sharedView = null;
+            document.body.classList.remove('shared-view');
+            document.body.classList.remove('view-only');
+            document.body.classList.remove('hide-dashboard-stakeholder');
+            clearSession();
+            isManager = false;
+            currentUser = null;
+            if (sessionTimerInterval) {
+                clearInterval(sessionTimerInterval);
+                sessionTimerInterval = null;
+            }
+            const timerDiv = document.getElementById('sessionTimer');
+            if (timerDiv) timerDiv.style.display = 'none';
+            const app = document.getElementById('appContainer');
+            if (app) app.style.display = 'none';
+            document.getElementById('accessGateway')?.remove();
+            document.getElementById('loginOverlay')?.remove();
+            if (reasonMsg) showToast(reasonMsg, 'warning', 2800);
+            // Volver a la tarjeta de perfil Consultor (login), no al gateway de solicitudes
+            showLogin();
+        }
+
         function toggleSelectMode() {
             if (!isManager) return;
             selectMode = !selectMode;
@@ -3516,18 +4128,45 @@
         function updateShareButtonVisibility() {
             const btn = document.getElementById('btnShareSelected');
             if (btn) {
-                if (selectMode && selectedDocIds.size > 0) btn.classList.add('visible');
+                if (selectMode) btn.classList.add('visible');
                 else btn.classList.remove('visible');
             }
+            const allBtn = document.getElementById('btnSelectAllDocs');
+            if (allBtn) {
+                if (selectMode) allBtn.classList.add('visible');
+                else allBtn.classList.remove('visible');
+            }
             const countEl = document.getElementById('shareSelectCount');
-            if (countEl) countEl.textContent = selectedDocIds.size > 0 ? selectedDocIds.size : '';
+            if (countEl) countEl.textContent = selectedDocIds.size > 0 ? String(selectedDocIds.size) : '';
+        }
+
+        function toggleSelectAllFiltered() {
+            if (!isManager || !selectMode) return;
+            const rows = getFilteredData() || [];
+            const ids = rows.map(d => Number(d.id)).filter(Boolean);
+            if (ids.length === 0) {
+                showToast('No hay documentos en el filtro actual', 'warning');
+                return;
+            }
+            const allSelected = ids.every(id => selectedDocIds.has(id));
+            if (allSelected) {
+                ids.forEach(id => selectedDocIds.delete(id));
+                showToast('Selección limpiada', 'info', 1500);
+            } else {
+                ids.forEach(id => selectedDocIds.add(id));
+                showToast(ids.length + ' documento(s) seleccionados', 'success', 1500);
+            }
+            renderAll();
+            updateShareButtonVisibility();
         }
 
         function openShareModal() {
-            if (!isManager || selectedDocIds.size === 0) {
-                showToast('Seleccione al menos un documento', 'warning');
-                return;
+            if (!isManager) return;
+            if (!selectMode) {
+                selectMode = true;
+                renderAll();
             }
+            updateShareButtonVisibility();
             const list = document.getElementById('shareColumnsList');
             const hideable = COLUMNS.filter(c => c.key !== 'acciones' && c.key !== 'id');
             list.innerHTML = hideable.map(col => `
@@ -3538,10 +4177,8 @@
             `).join('');
             const shareDash = document.getElementById('shareHideDashboard');
             if (shareDash) shareDash.checked = false;
-            // Always include id and nomenclatura conceptually - id shown by default
-            const summary = document.getElementById('shareDocsSummary');
-            const docs = data.documents.filter(d => selectedDocIds.has(d.id));
-            summary.innerHTML = docs.map(d => `<div style="font-family:monospace;">${d.nomenclatura} ${d.nombre || ''}</div>`).join('') || 'Ninguno';
+            resetShareBulkFiltersUI();
+            refreshShareDocsSummary();
             document.getElementById('shareName').value = '';
             document.getElementById('sharePassword').value = '';
             document.getElementById('shareExpAmount').value = '24';
@@ -3742,6 +4379,7 @@
             renderEditSolColumnsList(sol.columns || []);
             const edDash = document.getElementById('editSolHideDashboard');
             if (edDash) edDash.checked = !!sol.hideDashboard;
+            resetEditBulkFiltersUI();
             renderEditSolDocsList();
             populateEditSolAddSelect();
             document.getElementById('editSolModal').classList.add('active');
@@ -3991,9 +4629,40 @@
             });
             saveData(data);
             renderHistory();
+
+            // Correo informando la actualización
+            const link = 'https://internalcontrolengineering.github.io/Matriz-Documental/';
+            const expDate = new Date(sol.expiresAt).toLocaleString('es-ES', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const docList = docs.map(d =>
+                '• ' + (d.nomenclatura || '') + ' ' + (d.nombre || '')
+            ).join('\n') || '(sin documentos)';
+            const subject = encodeURIComponent('Actualización de solicitud: ' + name);
+            const body = encodeURIComponent(
+                'Se ha actualizado una solicitud de acceso a la Matriz de Documentación Normativa Interna.\n\n' +
+                'Solicitud: ' + name + '\n' +
+                'Contraseña: ' + password + '\n' +
+                'Nueva expiración: ' + expDate + ' (' + sol.expirationLabel + ')\n' +
+                'Documentos incluidos (' + docs.length + '):\n' + docList + '\n\n' +
+                'Columnas visibles: ' + (sol.columns || []).join(', ') + '\n' +
+                'Dashboard: ' + (sol.hideDashboard ? 'oculto' : 'visible') + '\n\n' +
+                'Para acceder:\n' +
+                '1. Abra el enlace: ' + link + '\n' +
+                '2. Seleccione el perfil "Consultor".\n' +
+                '3. Elija la solicitud "' + name + '" e ingrese la contraseña.\n\n' +
+                'Atentamente,\nControl Interno'
+            );
+            try {
+                window.open('mailto:?subject=' + subject + '&body=' + body, '_blank');
+            } catch (e) {
+                console.warn('[Share] No se pudo abrir el correo:', e);
+            }
+
             closeEditSolModal();
             closeManageSolicitudesModal();
-            showToast('Solicitud actualizada', 'success');
+            showToast('Solicitud actualizada y correo abierto', 'success');
         }
 
         async function editSolDelete() {
@@ -4147,21 +4816,15 @@
             await loadSharedSolicitudes();
             const sol = sharedSolicitudes.find(s => s.id === sharedView.id);
             if (!sol || (sol.expiresAt && sol.expiresAt <= Date.now())) {
-                sharedView = null;
-                document.body.classList.remove('shared-view');
-                // Quitar de sesión
-                const session = getStoredSession();
-                if (session) {
-                    session.sharedViewId = null;
-                    localStorage.setItem('matriz_session', JSON.stringify(session));
-                }
-                applyViewOnlyMode();
-                showToast('La solicitud expiró o fue eliminada. Vista general de Consultor.', 'warning');
+                await exitSharedViewToConsultorGateway(
+                    sol ? 'La solicitud ha expirado. Sesión cerrada.' : 'La solicitud fue eliminada. Sesión cerrada.'
+                );
                 return false;
             }
             sharedView = buildSharedViewFromSol(sol);
             document.body.classList.add('shared-view');
             applyViewOnlyMode();
+            if (typeof injectSharedBanner === 'function') injectSharedBanner();
             return true;
         }
 
@@ -4192,17 +4855,45 @@
             if (!sharedView) return;
             const matrizTab = document.getElementById('tab-matriz');
             if (!matrizTab) return;
-            const card = matrizTab.querySelector('.card');
+            // Preferir insertar al inicio del contenido de matriz
+            const card = matrizTab.querySelector('.card') || matrizTab;
             if (!card) return;
-            const exp = new Date(sharedView.expiresAt).toLocaleString('es-ES');
+            const exp = sharedView.expiresAt
+                ? new Date(sharedView.expiresAt).toLocaleString('es-ES', {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                })
+                : '—';
+            const docIds = (sharedView.documentIds || []).map(Number);
+            const noms = sharedView.nomenclaturas || [];
+            let docPreview = '';
+            if (noms.length) {
+                docPreview = noms.slice(0, 8).map(n => String(n).replace(/</g, '&lt;')).join(', ');
+                if (noms.length > 8) docPreview += ' … +' + (noms.length - 8);
+            } else if (docIds.length && data && data.documents) {
+                const labels = data.documents
+                    .filter(d => docIds.includes(Number(d.id)))
+                    .map(d => (d.nomenclatura || d.nombre || ('#' + d.id)))
+                    .slice(0, 8);
+                docPreview = labels.map(n => String(n).replace(/</g, '&lt;')).join(', ');
+                if (docIds.length > 8) docPreview += ' … +' + (docIds.length - 8);
+            }
+            const nDocs = docIds.length || noms.length;
             const banner = document.createElement('div');
             banner.id = 'sharedBanner';
             banner.className = 'shared-banner';
-            banner.innerHTML = `<i class="fas fa-link"></i>
-                <span class="sb-name">Solicitud: ${sharedView.name.replace(/</g, '&lt;')}</span>
-                <span class="sb-exp">Expira: ${exp}</span>
-                <span style="margin-left:auto;font-size:10px;">${(sharedView.documentIds||[]).length} docs</span>`;
-            card.insertBefore(banner, card.firstChild);
+            banner.innerHTML =
+                '<div class="sb-main">' +
+                '<i class="fas fa-link"></i> ' +
+                '<span class="sb-name">Solicitud: <strong>' + String(sharedView.name || '').replace(/</g, '&lt;') + '</strong></span>' +
+                '<span class="sb-exp"><i class="fas fa-clock"></i> Expira: ' + exp + '</span>' +
+                '<span class="sb-count">' + nDocs + ' doc' + (nDocs === 1 ? '' : 's') + '</span>' +
+                '</div>' +
+                (docPreview
+                    ? '<div class="sb-docs"><i class="fas fa-file-alt"></i> ' + docPreview + '</div>'
+                    : '');
+            if (card.firstChild) card.insertBefore(banner, card.firstChild);
+            else card.appendChild(banner);
         }
 
 
@@ -4428,6 +5119,11 @@
                 showToast('Su sesión ha expirado', 'warning', 2000);
                 clearSession();
                 setTimeout(() => location.reload(), 600);
+                return;
+            }
+            // Si la vista compartida expiró, cerrar sesión → gateway Consultor
+            if (sharedView && sharedView.expiresAt && sharedView.expiresAt <= Date.now()) {
+                exitSharedViewToConsultorGateway('La solicitud ha expirado. Sesión cerrada.');
                 return;
             }
             const minutes = Math.floor(remaining / 60000);
@@ -6051,10 +6747,12 @@ function getFilteredData() {
                 const hiddenClass = isColumnHiddenForStakeholder(col.key) ? 'col-hidden-stakeholder' : '';
                 if (col.key === 'acciones') {
                     const selectActive = selectMode ? 'active' : '';
-                    const shareVisible = (selectMode && selectedDocIds.size > 0) ? 'visible' : '';
+                    const shareVisible = selectMode ? 'visible' : '';
+                    const selectAllVisible = selectMode ? 'visible' : '';
                     const selectBtns = isManager && !sharedView
-                        ? `<button type="button" class="select-mode-toggle ${selectActive}" onclick="toggleSelectMode()" title="Seleccionar documentos"><i class="fas fa-check-square"></i></button>
-                            <button type="button" class="share-btn-header ${shareVisible}" id="btnShareSelected" onclick="openShareModal()" title="Compartir seleccionados"><i class="fas fa-share-nodes"></i><span id="shareSelectCount">${selectedDocIds.size > 0 ? selectedDocIds.size : ''}</span></button>`
+                        ? `<button type="button" class="select-mode-toggle ${selectActive}" onclick="toggleSelectMode()" title="Modo selección"><i class="fas fa-check-square"></i></button>
+                            <button type="button" class="select-all-btn ${selectAllVisible}" id="btnSelectAllDocs" onclick="toggleSelectAllFiltered()" title="Seleccionar / deseleccionar todos"><i class="fas fa-check-double"></i></button>
+                            <button type="button" class="share-btn-header ${shareVisible}" id="btnShareSelected" onclick="openShareModal()" title="Compartir"><i class="fas fa-share-nodes"></i><span id="shareSelectCount">${selectedDocIds.size > 0 ? selectedDocIds.size : ''}</span></button>`
                         : '';
                     html +=
                         `<th class="${hiddenClass} col-acciones" style="text-align:center;width:88px;min-width:88px;max-width:100px;background:var(--header-bg);overflow:hidden;"><div class="th-content" style="align-items:center;overflow:hidden;"><span class="th-acciones-row"><span class="th-label" style="font-size:9px;">${col.label}</span>${selectBtns}</span></div></th>`;
@@ -8627,10 +9325,15 @@ function getFilteredData() {
 
         function closeAnyOpenDropdown() {
             if (!openDropdown) return;
-            if (String(openDropdown).startsWith('dash-')) {
-                closeDashDropdown(openDropdown.replace('dash-', ''));
-            } else if (String(openDropdown).startsWith('gen-')) {
-                closeGenDropdown(openDropdown.replace('gen-', ''));
+            const od = String(openDropdown);
+            if (od.startsWith('sharebulk-')) {
+                closeBulkDropdown('sharebulk', od.replace('sharebulk-', ''));
+            } else if (od.startsWith('editbulk-')) {
+                closeBulkDropdown('editbulk', od.replace('editbulk-', ''));
+            } else if (od.startsWith('dash-')) {
+                closeDashDropdown(od.replace('dash-', ''));
+            } else if (od.startsWith('gen-')) {
+                closeGenDropdown(od.replace('gen-', ''));
             } else {
                 closeDropdown(openDropdown);
             }
@@ -8639,7 +9342,21 @@ function getFilteredData() {
         document.addEventListener('click', function(e) {
             if (!openDropdown) return;
             const target = e.target;
-            if (String(openDropdown).startsWith('dash-')) {
+            if (String(openDropdown).startsWith('sharebulk-')) {
+                const key = openDropdown.replace('sharebulk-', '');
+                const dropdown = document.getElementById('dropdown-sharebulk-' + key);
+                const btn = document.getElementById(SHARE_BULK_BTNS[key]);
+                if (dropdown && !dropdown.contains(target) && btn && !btn.contains(target)) {
+                    closeBulkDropdown('sharebulk', key);
+                }
+            } else if (String(openDropdown).startsWith('editbulk-')) {
+                const key = openDropdown.replace('editbulk-', '');
+                const dropdown = document.getElementById('dropdown-editbulk-' + key);
+                const btn = document.getElementById(EDIT_BULK_BTNS[key]);
+                if (dropdown && !dropdown.contains(target) && btn && !btn.contains(target)) {
+                    closeBulkDropdown('editbulk', key);
+                }
+            } else if (String(openDropdown).startsWith('dash-')) {
                 const key = openDropdown.replace('dash-', '');
                 const dropdown = document.getElementById(`dropdown-dash-${key}`);
                 const btn = document.getElementById(DASH_FILTER_BTNS[key]);
@@ -8665,24 +9382,22 @@ function getFilteredData() {
         });
         function getOpenFilterDropdownEl() {
             if (!openDropdown) return null;
-            if (String(openDropdown).startsWith('dash-')) {
-                return document.getElementById('dropdown-dash-' + openDropdown.replace('dash-', ''));
-            }
-            if (String(openDropdown).startsWith('gen-')) {
-                return document.getElementById('dropdown-gen-' + openDropdown.replace('gen-', ''));
-            }
+            const od = String(openDropdown);
+            if (od.startsWith('sharebulk-')) return document.getElementById('dropdown-sharebulk-' + od.replace('sharebulk-', ''));
+            if (od.startsWith('editbulk-')) return document.getElementById('dropdown-editbulk-' + od.replace('editbulk-', ''));
+            if (od.startsWith('dash-')) return document.getElementById('dropdown-dash-' + od.replace('dash-', ''));
+            if (od.startsWith('gen-')) return document.getElementById('dropdown-gen-' + od.replace('gen-', ''));
             return document.getElementById('dropdown-' + openDropdown);
         }
 
         function repositionOpenFilterDropdown() {
             if (!openDropdown) return;
-            if (String(openDropdown).startsWith('dash-')) {
-                positionDashDropdown(openDropdown.replace('dash-', ''));
-            } else if (String(openDropdown).startsWith('gen-')) {
-                positionGenDropdown(openDropdown.replace('gen-', ''));
-            } else {
-                positionDropdown(openDropdown);
-            }
+            const od = String(openDropdown);
+            if (od.startsWith('sharebulk-')) positionBulkDropdown('sharebulk', od.replace('sharebulk-', ''), SHARE_BULK_BTNS);
+            else if (od.startsWith('editbulk-')) positionBulkDropdown('editbulk', od.replace('editbulk-', ''), EDIT_BULK_BTNS);
+            else if (od.startsWith('dash-')) positionDashDropdown(od.replace('dash-', ''));
+            else if (od.startsWith('gen-')) positionGenDropdown(od.replace('gen-', ''));
+            else positionDropdown(openDropdown);
         }
 
         document.addEventListener('scroll', function(e) {
@@ -8731,6 +9446,7 @@ function getFilteredData() {
             renderHistory();
             actualizarDashboardFilters();
             actualizarFiltrosGenerales();
+            if (typeof injectSharedBanner === 'function') injectSharedBanner();
             if (document.getElementById('tab-dashboard').classList.contains('active')) setTimeout(renderDashboard,
             50);
             populateModalSelects();
