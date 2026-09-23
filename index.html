@@ -3062,7 +3062,7 @@
                         <button class="btn btn-sm" onclick="resetFiltrosGenerales()" title="Limpiar filtros generales"><i class="fas fa-undo-alt"></i></button>
                         <button class="btn btn-sm btn-warning" onclick="resetAllFilters()" title="Limpiar filtros de columnas"><i class="fas fa-filter"></i></button>
                         <button class="btn btn-sm manager-only" id="btnCheckDup" onclick="openDupCheckModal()" title="Verificar nomenclatura duplicada" style="background:#6366f1;color:white;border-color:#6366f1;"><i class="fas fa-clone"></i></button>
-                        <button class="btn btn-sm manager-only" id="btnColumnVisibility" onclick="openColumnVisibilityModal()" title="Ocultar columnas para Consultores" style="background:#64748b;color:white;border-color:#64748b;"><i class="fas fa-eye-slash"></i></button>
+                        <button class="btn btn-sm manager-only" id="btnColumnVisibility" onclick="openColumnVisibilityModal()" title="Configuración de matriz general" style="background:#64748b;color:white;border-color:#64748b;"><i class="fas fa-sliders"></i></button>
                     </div>
                 </div>
                 <div class="table-container" id="tableContainer">
@@ -3259,7 +3259,7 @@
                     <label>Hipervínculo / Documento <span style="color:var(--red);">*</span></label>
                     <div class="hiper-field-wrap">
                         <div class="hiper-row">
-                            <input type="text" id="mHipervinculo" placeholder="https://… o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
+                            <input type="text" id="mHipervinculo" placeholder="Ingrese URL o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
                             <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('mHiperFile').click()" title="Subir documento"><i class="fas fa-upload"></i> Subir</button>
                             <button type="button" class="btn btn-sm" onclick="openHiperLink()" title="Abrir enlace"><i class="fas fa-external-link-alt"></i></button>
                             <button type="button" class="btn btn-sm" onclick="clearHiperLink()" title="Limpiar"><i class="fas fa-times"></i></button>
@@ -3317,12 +3317,49 @@
 
     <!-- Modal: Visibilidad de columnas para Consultores -->
     <div class="modal-overlay" id="columnVisibilityModal">
-        <div class="modal" style="max-width:420px;">
-            <h2><i class="fas fa-eye-slash"></i> Visibilidad para Consultores</h2>
+        <div class="modal" style="max-width:540px;">
+            <h2><i class="fas fa-sliders"></i> Configuración de matriz general</h2>
             <p style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;">
-                Configure qué <strong>columnas</strong> y pestañas <strong>NO</strong> deben verse en la tarjeta <em>General</em> del perfil Consultor.
-                (Las solicitudes compartidas tienen su propia opción de Dashboard.)
+                Configure el acceso <em>General</em>: columnas, Dashboard, documentos, contraseña y caducidad.
             </p>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-key"></i> Contraseña y caducidad (General)</div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div>
+                        <label style="font-size:10px;">Contraseña acceso General <span style="color:var(--red);">*</span></label>
+                        <input type="text" id="colvisGeneralPassword" maxlength="60" placeholder="Ingrese contraseña nueva" autocomplete="off" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:11px;">
+                    </div>
+                    <div>
+                        <label style="font-size:10px;">Tiempo de acceso (desde guardar)</label>
+                        <div class="share-exp-row">
+                            <div class="num-stepper">
+                                <button type="button" onclick="stepNumber('colvisExpAmount', -1)">−</button>
+                                <input type="number" id="colvisExpAmount" min="1" max="365" value="30">
+                                <button type="button" onclick="stepNumber('colvisExpAmount', 1)">+</button>
+                            </div>
+                            <select id="colvisExpUnit">
+                                <option value="h">Horas</option>
+                                <option value="d" selected>Días</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-filter"></i> Documentos en matriz General</div>
+                <p style="font-size:9px;color:var(--text-secondary);margin:0 0 6px 0;">Acepte filtros (cruce Y). Sin filtros = matriz completa.</p>
+                <div class="bulk-filter-grid" id="colvisBulkFilters">
+                    <div class="grupo-filtro"><label>Año</label><div class="gen-filter-wrap" style="position:relative;"><button type="button" class="filter-select gen-filter-btn" id="btnColvisBulkAnio" onclick="toggleColvisBulkDropdown('anio', event)">Todos</button><div class="filter-dropdown" id="dropdown-colvisbulk-anio" style="display:none;"><div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterColvisBulkOptions('anio', this.value)"></div><div class="options-list" id="options-colvisbulk-anio"></div><div class="dropdown-actions"><button class="btn btn-secondary" onclick="clearColvisBulkFilter('anio')">Limpiar</button><button class="btn btn-primary" onclick="applyColvisBulkFilter('anio')">Aceptar</button></div></div></div></div>
+                    <div class="grupo-filtro"><label>Unidad</label><div class="gen-filter-wrap" style="position:relative;"><button type="button" class="filter-select gen-filter-btn" id="btnColvisBulkUnidad" onclick="toggleColvisBulkDropdown('unidad', event)">Todas</button><div class="filter-dropdown" id="dropdown-colvisbulk-unidad" style="display:none;"><div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterColvisBulkOptions('unidad', this.value)"></div><div class="options-list" id="options-colvisbulk-unidad"></div><div class="dropdown-actions"><button class="btn btn-secondary" onclick="clearColvisBulkFilter('unidad')">Limpiar</button><button class="btn btn-primary" onclick="applyColvisBulkFilter('unidad')">Aceptar</button></div></div></div></div>
+                    <div class="grupo-filtro"><label>Área</label><div class="gen-filter-wrap" style="position:relative;"><button type="button" class="filter-select gen-filter-btn" id="btnColvisBulkArea" onclick="toggleColvisBulkDropdown('area', event)">Todas</button><div class="filter-dropdown" id="dropdown-colvisbulk-area" style="display:none;"><div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterColvisBulkOptions('area', this.value)"></div><div class="options-list" id="options-colvisbulk-area"></div><div class="dropdown-actions"><button class="btn btn-secondary" onclick="clearColvisBulkFilter('area')">Limpiar</button><button class="btn btn-primary" onclick="applyColvisBulkFilter('area')">Aceptar</button></div></div></div></div>
+                    <div class="grupo-filtro"><label>Depto.</label><div class="gen-filter-wrap" style="position:relative;"><button type="button" class="filter-select gen-filter-btn" id="btnColvisBulkDepartamento" onclick="toggleColvisBulkDropdown('departamento', event)">Todos</button><div class="filter-dropdown" id="dropdown-colvisbulk-departamento" style="display:none;"><div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterColvisBulkOptions('departamento', this.value)"></div><div class="options-list" id="options-colvisbulk-departamento"></div><div class="dropdown-actions"><button class="btn btn-secondary" onclick="clearColvisBulkFilter('departamento')">Limpiar</button><button class="btn btn-primary" onclick="applyColvisBulkFilter('departamento')">Aceptar</button></div></div></div></div>
+                    <div class="grupo-filtro"><label>Categoría</label><div class="gen-filter-wrap" style="position:relative;"><button type="button" class="filter-select gen-filter-btn" id="btnColvisBulkCategoria" onclick="toggleColvisBulkDropdown('categoria', event)">Todas</button><div class="filter-dropdown" id="dropdown-colvisbulk-categoria" style="display:none;"><div class="search-box"><input type="text" placeholder="Buscar..." oninput="filterColvisBulkOptions('categoria', this.value)"></div><div class="options-list" id="options-colvisbulk-categoria"></div><div class="dropdown-actions"><button class="btn btn-secondary" onclick="clearColvisBulkFilter('categoria')">Limpiar</button><button class="btn btn-primary" onclick="applyColvisBulkFilter('categoria')">Aceptar</button></div></div></div></div>
+                </div>
+                <div class="bulk-filter-actions">
+                    <span class="bulk-live-count empty" id="colvisBulkLiveCount">Sin filtros (matriz completa)</span>
+                    <button type="button" class="btn btn-sm" onclick="clearColvisBulkAll()"><i class="fas fa-eraser"></i> Limpiar</button>
+                </div>
+            </div>
             <div style="margin-bottom:12px;">
                 <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-window-maximize"></i> Pestañas (solo acceso General)</div>
                 <div class="col-visibility-item" onclick="this.querySelector('input').click()">
@@ -3330,10 +3367,11 @@
                     <label for="colvis_hideDashboard">Ocultar pestaña Dashboard</label>
                 </div>
             </div>
-            <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-columns"></i> Columnas de la matriz</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-columns"></i> Columnas visibles en la matriz</div>
+            <p style="font-size:9px;color:var(--text-secondary);margin:0 0 6px 0;">Marque las que <strong>sí</strong> deben verse; desmarque las que no.</p>
             <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-                <button class="btn btn-sm" onclick="setAllColumnVisibility(false)" title="Desmarcar todas"><i class="fas fa-eraser"></i> Limpiar todo</button>
-                <button class="btn btn-sm" onclick="setAllColumnVisibility(true)" title="Marcar todas"><i class="fas fa-check-double"></i> Seleccionar todo</button>
+                <button class="btn btn-sm" onclick="setAllColumnVisibility(true)" title="Marcar todas como visibles"><i class="fas fa-check-double"></i> Todas visibles</button>
+                <button class="btn btn-sm" onclick="setAllColumnVisibility(false)" title="Desmarcar todas"><i class="fas fa-eraser"></i> Ninguna</button>
             </div>
             <div id="columnVisibilityList" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
             <div class="modal-actions" style="margin-top:14px;">
@@ -3401,11 +3439,11 @@
             <div class="form-grid-modal" style="grid-template-columns:1fr;">
                 <div>
                     <label>Nombre de la solicitud <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="shareName" placeholder="Ingrese el ID de la Solicitud" maxlength="80">
+                    <input type="text" id="shareName" placeholder="Ingrese ID de la Solicitud" maxlength="80">
                 </div>
                 <div>
                     <label>Contraseña de acceso <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="sharePassword" placeholder="Ingrese la Contraseña de la Solicitud" maxlength="60" autocomplete="off">
+                    <input type="text" id="sharePassword" placeholder="Ingrese Contraseña de la Solicitud" maxlength="60" autocomplete="off">
                 </div>
                 <div>
                     <label>Tiempo de expiración <span style="color:var(--red);">*</span></label>
@@ -3710,7 +3748,17 @@
         // ============================================================
         let selectMode = false;
         let selectedDocIds = new Set();
-        let sharedView = null; // { id, name, columns, documentIds, expiresAt }
+        let sharedView = null;
+        let generalAccessConfig = null;
+        let generalViewActive = false;
+        let gatewayPollTimer = null;
+        const GENERAL_ACCESS_KEY = 'matriz_general_access_v1';
+        let colvisBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+        let colvisBulkDocIds = [];
+        const COLVIS_BULK_BTNS = {
+            anio: 'btnColvisBulkAnio', unidad: 'btnColvisBulkUnidad', area: 'btnColvisBulkArea',
+            departamento: 'btnColvisBulkDepartamento', categoria: 'btnColvisBulkCategoria'
+        };
         const SHARED_STORAGE_KEY = 'matriz_shared_solicitudes_v1';
         let sharedSolicitudes = [];
 
@@ -3828,12 +3876,9 @@
             let f = [...(data.documents || [])];
             if ((filters.anio||[]).length) {
                 f = f.filter(d => {
-                    const dates = [d.fechaActualizacion, d.fechaEmision, d.fechaAutorizacion, d.fechaDifusion];
-                    return dates.some(fd => {
-                        if (!fd) return false;
-                        const p = String(fd).split('/');
-                        return p.length === 3 && filters.anio.includes(p[2]);
-                    });
+                    if (!d.fechaActualizacion) return false;
+                    const p = String(d.fechaActualizacion).split('/');
+                    return p.length === 3 && filters.anio.includes(p[2]);
                 });
             }
             if ((filters.unidad||[]).length) f = f.filter(d => filters.unidad.includes(d.unidad));
@@ -4088,6 +4133,7 @@
 
         async function exitSharedViewToConsultorGateway(reasonMsg) {
             sharedView = null;
+            generalViewActive = false;
             document.body.classList.remove('shared-view');
             document.body.classList.remove('view-only');
             document.body.classList.remove('hide-dashboard-stakeholder');
@@ -4301,6 +4347,106 @@
             const noms = new Set((sharedView.nomenclaturas || []).map(String));
             return data.documents.filter(d => ids.has(d.id) || noms.has(String(d.nomenclatura)));
         }
+
+        function getFilteredDataForGeneral() {
+            if (!generalViewActive || !generalAccessConfig) return null;
+            const ids = (generalAccessConfig.documentIds || []).map(Number).filter(Boolean);
+            if (!ids.length) return [...(data.documents || [])];
+            const idSet = new Set(ids);
+            return (data.documents || []).filter(d => idSet.has(Number(d.id)));
+        }
+        function getScopedDocuments() {
+            if (!isManager && sharedView) return getFilteredDataForShared() || [];
+            if (!isManager && generalViewActive) return getFilteredDataForGeneral() || [];
+            return [...(data.documents || [])];
+        }
+        function saveGeneralAccessLocal(cfg) {
+            try { localStorage.setItem(GENERAL_ACCESS_KEY, JSON.stringify(cfg)); } catch (e) {}
+        }
+        function loadGeneralAccessLocal() {
+            try {
+                const raw = localStorage.getItem(GENERAL_ACCESS_KEY);
+                if (!raw) return null;
+                const p = JSON.parse(raw);
+                return p && typeof p === 'object' ? p : null;
+            } catch (e) { return null; }
+        }
+        async function loadGeneralAccessFromSupabase() {
+            try {
+                const { data: rows, error } = await supabaseClient.from('meta').select('*').eq('key', 'generalConsultorAccess');
+                if (error) throw error;
+                if (!rows || !rows.length) return null;
+                rows.sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
+                const row = rows[0];
+                if (!row.value_text) return null;
+                const p = typeof row.value_text === 'string' ? JSON.parse(row.value_text) : row.value_text;
+                return p && typeof p === 'object' ? p : null;
+            } catch (e) { return null; }
+        }
+        async function saveGeneralAccessToSupabase(cfg) {
+            try {
+                const { error } = await supabaseClient.from('meta').upsert(
+                    { key: 'generalConsultorAccess', value: Date.now(), value_text: JSON.stringify(cfg) },
+                    { onConflict: 'key' }
+                );
+                if (error) {
+                    await supabaseClient.from('meta').delete().eq('key', 'generalConsultorAccess');
+                    await supabaseClient.from('meta').insert({ key: 'generalConsultorAccess', value: Date.now(), value_text: JSON.stringify(cfg) });
+                }
+                return true;
+            } catch (e) { return false; }
+        }
+        async function initGeneralAccessConfig() {
+            const remote = await loadGeneralAccessFromSupabase();
+            const local = loadGeneralAccessLocal();
+            generalAccessConfig = remote || local || null;
+            if (generalAccessConfig) saveGeneralAccessLocal(generalAccessConfig);
+        }
+        function isGeneralAccessExpired(cfg) {
+            if (!cfg || !cfg.expiresAt) return false;
+            return Number(cfg.expiresAt) <= Date.now();
+        }
+        function toggleColvisBulkDropdown(key, event) {
+            toggleBulkDropdown('colvisbulk', key, event, colvisBulkFilters, COLVIS_BULK_BTNS);
+        }
+        function filterColvisBulkOptions(key, val) {
+            filterBulkOptionsUI('colvisbulk', key, val, colvisBulkFilters);
+        }
+        function clearColvisBulkFilter(key) {
+            clearBulkFilterSelection('colvisbulk', key, colvisBulkFilters, COLVIS_BULK_BTNS);
+            syncColvisDocsFromBulkFilters(false);
+        }
+        function applyColvisBulkFilter(key) {
+            applyBulkFilterSelection('colvisbulk', key, colvisBulkFilters, COLVIS_BULK_BTNS, () => syncColvisDocsFromBulkFilters(false));
+        }
+        function syncColvisDocsFromBulkFilters(silent) {
+            const any = ['anio','unidad','area','departamento','categoria'].some(k => (colvisBulkFilters[k]||[]).length > 0);
+            const el = document.getElementById('colvisBulkLiveCount');
+            if (!any) {
+                colvisBulkDocIds = [];
+                if (el) { el.textContent = 'Sin filtros (matriz completa)'; el.classList.add('empty'); }
+                return;
+            }
+            const matched = docsMatchingBulkFilters(colvisBulkFilters);
+            colvisBulkDocIds = matched.map(d => Number(d.id)).filter(Boolean);
+            if (el) {
+                el.textContent = colvisBulkDocIds.length + ' documento' + (colvisBulkDocIds.length === 1 ? '' : 's');
+                el.classList.toggle('empty', colvisBulkDocIds.length === 0);
+            }
+            if (!silent) {
+                if (!colvisBulkDocIds.length) showToast('Ningún documento con esta combinación', 'warning');
+                else showToast(colvisBulkDocIds.length + ' docs para acceso General', 'success', 1500);
+            }
+        }
+        function clearColvisBulkAll() {
+            colvisBulkFilters = { anio: [], unidad: [], area: [], departamento: [], categoria: [] };
+            colvisBulkDocIds = [];
+            Object.keys(COLVIS_BULK_BTNS).forEach(k => updateBulkFilterButton(k, colvisBulkFilters, COLVIS_BULK_BTNS));
+            const el = document.getElementById('colvisBulkLiveCount');
+            if (el) { el.textContent = 'Sin filtros (matriz completa)'; el.classList.add('empty'); }
+        }
+
+
 
 
         let _editSolId = null;
@@ -4692,6 +4838,64 @@
             showToast('Solicitud eliminada', 'delete');
         }
 
+        function stopGatewayPoll() {
+            if (gatewayPollTimer) {
+                clearInterval(gatewayPollTimer);
+                gatewayPollTimer = null;
+            }
+        }
+
+        function startGatewayPoll() {
+            stopGatewayPoll();
+            const snapshot = () => (sharedSolicitudes || []).map(s => s.id + ':' + (s.expiresAt || 0)).sort().join('|');
+            let last = snapshot();
+            gatewayPollTimer = setInterval(async () => {
+                if (!document.getElementById('accessGateway')) {
+                    stopGatewayPoll();
+                    return;
+                }
+                try {
+                    await loadSharedSolicitudes();
+                    const now = Date.now();
+                    const beforeIds = (sharedSolicitudes || []).map(s => s.id);
+                    sharedSolicitudes = (sharedSolicitudes || []).filter(s => !s.expiresAt || s.expiresAt > now);
+                    const afterIds = sharedSolicitudes.map(s => s.id);
+                    const solsChanged = beforeIds.length !== afterIds.length || snapshot() !== last;
+
+                    const prevPwd = generalAccessConfig && generalAccessConfig.password;
+                    const prevVer = generalAccessConfig && (generalAccessConfig.configVersion || generalAccessConfig.updatedAt);
+                    const prevDocs = generalAccessConfig && JSON.stringify(generalAccessConfig.documentIds || []);
+                    await initGeneralAccessConfig();
+                    let genKick = null;
+                    if (prevPwd && generalAccessConfig) {
+                        if (prevPwd !== generalAccessConfig.password) genKick = 'password';
+                        else if (
+                            (prevVer && generalAccessConfig.configVersion && prevVer !== generalAccessConfig.configVersion) ||
+                            prevDocs !== JSON.stringify(generalAccessConfig.documentIds || [])
+                        ) genKick = 'config';
+                    }
+                    if (generalAccessConfig && isGeneralAccessExpired(generalAccessConfig)) genKick = genKick || 'expired';
+
+                    if (solsChanged || genKick) {
+                        last = snapshot();
+                        stopGatewayPoll();
+                        document.getElementById('accessGateway')?.remove();
+                        showLogin();
+                        const msg = genKick === 'password'
+                            ? 'Se cambió la contraseña de la matriz general. Use la nueva al entrar.'
+                            : genKick === 'config'
+                            ? 'Se actualizó la configuración de la matriz general.'
+                            : genKick === 'expired'
+                            ? 'El acceso a la matriz general ha expirado.'
+                            : 'Una o más solicitudes caducaron o fueron eliminadas';
+                        showToast(msg, 'warning', 3200);
+                    }
+                } catch (e) {
+                    console.warn('[Gateway poll]', e);
+                }
+            }, 8000);
+        }
+
         async function showConsultorGateway() {
             await loadSharedSolicitudes();
             const existing = document.getElementById('accessGateway');
@@ -4717,7 +4921,7 @@
                             <div class="gateway-card general" id="gwGeneral">
                                 <div class="gw-icon"><i class="fas fa-globe"></i></div>
                                 <div class="gw-title">General</div>
-                                <div class="gw-meta">Matriz completa<br>(solo lectura)</div>
+                                <div class="gw-meta">Matriz configurada<br>(requiere contraseña)</div>
                             </div>
                             ${cards}
                         </div>
@@ -4729,28 +4933,49 @@
             document.body.insertAdjacentHTML('beforeend', htmlGw);
 
             document.getElementById('gwGeneral').onclick = async () => {
-                const ok = await showConfirm({
-                    title: 'Acceso general',
-                    message: '¿Entrar a la matriz completa en modo solo lectura?',
+                await initGeneralAccessConfig();
+                const cfg = generalAccessConfig;
+                if (!cfg || !cfg.password) {
+                    showToast('El acceso General aún no está configurado por Control Interno', 'warning');
+                    return;
+                }
+                if (isGeneralAccessExpired(cfg)) {
+                    showToast('El acceso General ha expirado. Solicite una nueva configuración.', 'warning');
+                    return;
+                }
+                const pwd = await showPasswordConfirm({
+                    title: 'Acceso General',
+                    message: 'Ingrese la contraseña de la matriz general.',
                     type: 'info',
-                    confirmText: 'Entrar',
-                    cancelText: 'Cancelar'
+                    confirmText: 'Entrar'
                 });
-                if (!ok) return;
+                if (pwd === null) return;
+                if (pwd !== cfg.password) {
+                    showToast('Contraseña incorrecta', 'warning');
+                    return;
+                }
+                stopGatewayPoll();
                 document.getElementById('accessGateway')?.remove();
                 sharedView = null;
+                generalViewActive = true;
+                // Aplicar hide dashboard desde config general
+                if (cfg.hideDashboard != null) hideDashboardForStakeholder = !!cfg.hideDashboard;
                 await enterAppAsConsultor();
             };
 
             document.querySelectorAll('.gateway-card.solicitud').forEach(card => {
-                card.onclick = () => openSolicitudPassword(card.dataset.solId);
+                card.onclick = () => {
+                    stopGatewayPoll();
+                    openSolicitudPassword(card.dataset.solId);
+                };
             });
 
             document.getElementById('gwBackLogin').onclick = () => {
+                stopGatewayPoll();
                 document.getElementById('accessGateway')?.remove();
-                // Restaurar login si se cerró
                 if (!document.getElementById('loginOverlay')) showLogin();
             };
+            startGatewayPoll();
         }
 
         async function openSolicitudPassword(solId) {
@@ -4836,8 +5061,12 @@
             document.getElementById('loginOverlay')?.remove();
             document.getElementById('accessGateway')?.remove();
             document.getElementById('appContainer').style.display = 'block';
-            if (sharedView) document.body.classList.add('shared-view');
-            else document.body.classList.remove('shared-view');
+            if (sharedView) {
+                document.body.classList.add('shared-view');
+                generalViewActive = false;
+            } else {
+                document.body.classList.remove('shared-view');
+            }
             applyViewOnlyMode();
             data = await loadData();
             await initHiddenColumns();
@@ -5126,6 +5355,11 @@
                 exitSharedViewToConsultorGateway('La solicitud ha expirado. Sesión cerrada.');
                 return;
             }
+            if (generalViewActive && generalAccessConfig && isGeneralAccessExpired(generalAccessConfig)) {
+                generalViewActive = false;
+                exitSharedViewToConsultorGateway('El acceso General ha expirado. Sesión cerrada.');
+                return;
+            }
             const minutes = Math.floor(remaining / 60000);
             const seconds = Math.floor((remaining % 60000) / 1000);
             timerDisplay.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
@@ -5284,6 +5518,7 @@
                     await initHiddenColumns();
                     await initRequiredFields();
                     await loadSharedSolicitudes();
+                    await initGeneralAccessConfig();
                     renderAll();
                     setupRealtimeSync();
                 } catch (err) {
@@ -5389,6 +5624,7 @@
                 await initRequiredFields();
                 initColumnResizeUI();
                 await loadSharedSolicitudes();
+                await initGeneralAccessConfig();
                 // Restaurar vista de solicitud si la sesión la tenía
                 if (!session.isManager && session.sharedViewId) {
                     const sol = sharedSolicitudes.find(s => s.id === session.sharedViewId);
@@ -5889,6 +6125,60 @@
                 await initHiddenColumns();
                 await initRequiredFields();
 
+                // Detectar cambio de acceso General (contraseña vs resto de config)
+                const prevGen = generalAccessConfig ? {
+                    password: generalAccessConfig.password,
+                    configVersion: generalAccessConfig.configVersion || generalAccessConfig.updatedAt,
+                    expiresAt: generalAccessConfig.expiresAt,
+                    documentIds: JSON.stringify(generalAccessConfig.documentIds || []),
+                    hideDashboard: !!generalAccessConfig.hideDashboard
+                } : null;
+                await initGeneralAccessConfig();
+                if (!isManager) {
+                    const onGateway = !!document.getElementById('accessGateway');
+                    let kickReason = null; // 'password' | 'config' | 'expired' | 'removed'
+                    if (prevGen && generalAccessConfig) {
+                        if (prevGen.password !== generalAccessConfig.password) {
+                            kickReason = 'password';
+                        } else if (
+                            (prevGen.configVersion && generalAccessConfig.configVersion && prevGen.configVersion !== generalAccessConfig.configVersion) ||
+                            prevGen.documentIds !== JSON.stringify(generalAccessConfig.documentIds || []) ||
+                            prevGen.hideDashboard !== !!generalAccessConfig.hideDashboard ||
+                            prevGen.expiresAt !== generalAccessConfig.expiresAt
+                        ) {
+                            kickReason = 'config';
+                        }
+                    } else if (prevGen && !generalAccessConfig) {
+                        kickReason = 'removed';
+                    }
+                    const genExpired = generalAccessConfig && isGeneralAccessExpired(generalAccessConfig);
+                    if (genExpired && (generalViewActive || onGateway)) {
+                        kickReason = kickReason || 'expired';
+                    }
+
+                    const kickMsg = {
+                        password: 'Se cambió la contraseña de la matriz general. Debe ingresar de nuevo con la nueva contraseña.',
+                        config: 'Se actualizó la configuración de la matriz general (documentos, columnas o vigencia). Sesión cerrada.',
+                        expired: 'El acceso a la matriz general ha expirado. Sesión cerrada.',
+                        removed: 'El acceso a la matriz general ya no está disponible. Sesión cerrada.'
+                    };
+
+                    if (generalViewActive && kickReason) {
+                        generalViewActive = false;
+                        await exitSharedViewToConsultorGateway(kickMsg[kickReason]);
+                        isSyncingFromRealtime = false;
+                        return;
+                    }
+                    if (onGateway && kickReason) {
+                        stopGatewayPoll();
+                        document.getElementById('accessGateway')?.remove();
+                        showLogin();
+                        showToast(kickMsg[kickReason], 'warning', 3200);
+                        isSyncingFromRealtime = false;
+                        return;
+                    }
+                }
+
                 const remote = await loadFromSupabase();
                 if (remote) {
                     data = ensureCatalogs(remote);
@@ -6087,25 +6377,38 @@
             applyViewOnlyMode();
         }
 
-        function openColumnVisibilityModal() {
+        async function openColumnVisibilityModal() {
             if (!isManager) return;
             const list = document.getElementById('columnVisibilityList');
             if (!list) return;
-
-            // Columnas que se pueden ocultar (excluir 'acciones' porque ya se oculta en view-only)
+            await initGeneralAccessConfig();
             const hideable = COLUMNS.filter(c => c.key !== 'acciones');
-
             list.innerHTML = hideable.map(col => {
-                const checked = hiddenColumnsForStakeholder.includes(col.key) ? 'checked' : '';
+                const checked = !hiddenColumnsForStakeholder.includes(col.key) ? 'checked' : '';
                 return `<div class="col-visibility-item" onclick="this.querySelector('input').click()">
                     <input type="checkbox" id="colvis_${col.key}" value="${col.key}" ${checked} onclick="event.stopPropagation()">
                     <label for="colvis_${col.key}">${col.label}</label>
                 </div>`;
             }).join('');
-
             const dashCb = document.getElementById('colvis_hideDashboard');
             if (dashCb) dashCb.checked = !!hideDashboardForStakeholder;
-
+            const cfg = generalAccessConfig || {};
+            const pwdEl = document.getElementById('colvisGeneralPassword');
+            if (pwdEl) pwdEl.value = cfg.password || '';
+            const expAmt = document.getElementById('colvisExpAmount');
+            const expUnit = document.getElementById('colvisExpUnit');
+            if (expAmt) expAmt.value = cfg.expAmount || 30;
+            if (expUnit) expUnit.value = cfg.expUnit || 'd';
+            colvisBulkFilters = {
+                anio: (cfg.filters && cfg.filters.anio) || [],
+                unidad: (cfg.filters && cfg.filters.unidad) || [],
+                area: (cfg.filters && cfg.filters.area) || [],
+                departamento: (cfg.filters && cfg.filters.departamento) || [],
+                categoria: (cfg.filters && cfg.filters.categoria) || []
+            };
+            colvisBulkDocIds = (cfg.documentIds || []).map(Number);
+            Object.keys(COLVIS_BULK_BTNS).forEach(k => updateBulkFilterButton(k, colvisBulkFilters, COLVIS_BULK_BTNS));
+            syncColvisDocsFromBulkFilters(true);
             document.getElementById('columnVisibilityModal').classList.add('active');
         }
 
@@ -6121,20 +6424,37 @@
         async function saveColumnVisibility() {
             if (!isManager) return;
             const checkboxes = document.querySelectorAll('#columnVisibilityList input[type="checkbox"]');
-            const selected = [];
-            checkboxes.forEach(cb => { if (cb.checked) selected.push(cb.value); });
+            const visibleKeys = [];
+            checkboxes.forEach(cb => { if (cb.checked) visibleKeys.push(cb.value); });
+            // Ocultas = las no marcadas
+            const hideable = COLUMNS.filter(c => c.key !== 'acciones').map(c => c.key);
+            const selected = hideable.filter(k => !visibleKeys.includes(k));
+
             const hideDash = !!(document.getElementById('colvis_hideDashboard')?.checked);
+            const password = (document.getElementById('colvisGeneralPassword')?.value || '').trim();
+            if (!password) {
+                showToast('Indique una contraseña para el acceso General', 'warning');
+                return;
+            }
+            const exp = readExpFromInputs('colvisExpAmount', 'colvisExpUnit');
+            if (!exp.amount || exp.amount < 1) {
+                showToast('Indique un tiempo de acceso válido', 'warning');
+                return;
+            }
+            const anyFilter = ['anio','unidad','area','departamento','categoria'].some(k => (colvisBulkFilters[k]||[]).length > 0);
+            if (anyFilter) syncColvisDocsFromBulkFilters(true);
+
+            const prevPassword = (generalAccessConfig && generalAccessConfig.password) || '';
+            const passwordChanged = prevPassword && prevPassword !== password;
 
             const parts = [];
-            if (selected.length > 0) parts.push(`${selected.length} columna(s)`);
-            if (hideDash) parts.push('pestaña Dashboard');
-            const msg = parts.length === 0
-                ? 'Los Consultores verán todas las columnas y el Dashboard. ¿Continuar?'
-                : `Se ocultará para Consultores: ${parts.join(' y ')}. ¿Guardar cambios?`;
-
+            parts.push(visibleKeys.length + ' columna(s) visibles');
+            if (hideDash) parts.push('Dashboard oculto');
+            if (anyFilter) parts.push(colvisBulkDocIds.length + ' documentos');
+            parts.push('caduca en ' + formatExpirationLabel(exp.amount, exp.unit));
             const okConfirm = await showConfirm({
-                title: 'Guardar visibilidad',
-                message: msg,
+                title: 'Guardar configuración de matriz general',
+                message: 'Se guardará: ' + parts.join('; ') + (passwordChanged ? '. La contraseña anterior dejará de funcionar.' : '') + ' ¿Continuar?',
                 type: 'save',
                 confirmText: 'Guardar',
                 cancelText: 'Cancelar'
@@ -6144,18 +6464,66 @@
             hiddenColumnsForStakeholder = selected;
             hideDashboardForStakeholder = hideDash;
             saveHiddenColumnsLocal(selected);
-            saveHideDashboardLocal(hideDash);
-            const okCols = await saveHiddenColumnsToSupabase(selected);
-            const okDash = await saveHideDashboardToSupabase(hideDash);
+            await saveHiddenColumnsToSupabase(selected);
+            await saveHideDashboardToSupabase(hideDash);
 
-            closeColumnVisibilityModal();
-            applyViewOnlyMode();
-            renderAll();
-            if (okCols && okDash) {
-                showToast('Visibilidad para Consultores actualizada', 'save');
-            } else {
-                showToast('Guardado localmente (sin sincronizar completo)', 'warning');
+            const now = Date.now();
+            const cfg = {
+                password: password,
+                expiresAt: now + parseExpirationMs(exp.amount, exp.unit),
+                expAmount: exp.amount,
+                expUnit: exp.unit,
+                expirationLabel: formatExpirationLabel(exp.amount, exp.unit),
+                documentIds: anyFilter ? [...colvisBulkDocIds] : [],
+                nomenclaturas: anyFilter
+                    ? (data.documents || []).filter(d => colvisBulkDocIds.includes(Number(d.id))).map(d => d.nomenclatura)
+                    : [],
+                filters: {
+                    anio: [...(colvisBulkFilters.anio || [])],
+                    unidad: [...(colvisBulkFilters.unidad || [])],
+                    area: [...(colvisBulkFilters.area || [])],
+                    departamento: [...(colvisBulkFilters.departamento || [])],
+                    categoria: [...(colvisBulkFilters.categoria || [])]
+                },
+                hideDashboard: hideDash,
+                updatedAt: now,
+                configVersion: now
+            };
+            generalAccessConfig = cfg;
+            saveGeneralAccessLocal(cfg);
+            await saveGeneralAccessToSupabase(cfg);
+
+            // Correo de acceso general
+            const link = 'https://internalcontrolengineering.github.io/Matriz-Documental/';
+            const expDate = new Date(cfg.expiresAt).toLocaleString('es-ES', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const subject = encodeURIComponent('Acceso a matriz general — Control Interno');
+            const body = encodeURIComponent(
+                'Se ha configurado / actualizado el acceso a la Matriz General de Documentación Normativa Interna.\n\n' +
+                'Contraseña de acceso General: ' + password + '\n' +
+                'Vigencia hasta: ' + expDate + ' (' + cfg.expirationLabel + ' desde la configuración)\n' +
+                'Documentos incluidos: ' + (cfg.documentIds.length ? cfg.documentIds.length + ' (según filtros)' : 'matriz completa') + '\n\n' +
+                'Para acceder:\n' +
+                '1. Abra: ' + link + '\n' +
+                '2. Perfil Consultor → tarjeta General\n' +
+                '3. Ingrese la contraseña indicada\n\n' +
+                'Atentamente,\nControl Interno'
+            );
+            try { window.open('mailto:?subject=' + subject + '&body=' + body, '_blank'); } catch (e) {}
+
+            // Si hay sesión local en General con contraseña distinta, no aplica a esta pestaña manager;
+            // el kick a consultores se hace por realtime/poll
+            if (passwordChanged) {
+                try {
+                    localStorage.setItem('matriz_general_pwd_revoked_at', String(now));
+                } catch (e) {}
             }
+
+            applyViewOnlyMode();
+            closeColumnVisibilityModal();
+            showToast('Configuración de matriz general guardada y correo abierto', 'success');
         }
 
         function isColumnHiddenForStakeholder(key) {
@@ -6617,11 +6985,11 @@ function loadRequiredFieldsLocal() {
         }
 
         function getDataWithGeneralFilters() {
-            let filtered = [...data.documents];
+            let filtered = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...data.documents];
             if (generalFilters.anio && generalFilters.anio.length > 0) {
                 filtered = filtered.filter(d => {
                     if (!d.fechaActualizacion) return false;
-                    const p = d.fechaActualizacion.split('/');
+                    const p = String(d.fechaActualizacion).split('/');
                     return p.length === 3 && generalFilters.anio.includes(p[2]);
                 });
             }
@@ -6944,7 +7312,7 @@ function getFilteredData() {
         // FILTROS GENERALES
         // ============================================================
         function getBaseDataForGenFilter(excludeKey) {
-            let baseData = [...data.documents];
+            let baseData = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...data.documents];
             for (const [key, values] of Object.entries(currentFilters)) {
                 if (values && values.length > 0) {
                     baseData = baseData.filter(doc => values.includes(String(doc[key] || '')));
@@ -8361,7 +8729,7 @@ function getFilteredData() {
         let dashStatusChart, dashCategoriaChart, dashClasificacionChart, dashYearChart, dashTipoChart;
 
         function getDashboardFilteredData() {
-            let f = sharedView ? (getFilteredDataForShared() || []) : [...data.documents];
+            let f = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...(data.documents || [])];
             if (dashboardFilters.anio && dashboardFilters.anio.length > 0) {
                 f = f.filter(d => {
                     if (!d.fechaActualizacion) return false;
@@ -8531,7 +8899,7 @@ function getFilteredData() {
         }
 
         function getBaseDataForDashFilter(excludeKey) {
-            let baseData = sharedView ? (getFilteredDataForShared() || []) : [...(data.documents || [])];
+            let baseData = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...(data.documents || [])];
             if (excludeKey !== 'anio' && dashboardFilters.anio.length > 0) {
                 baseData = baseData.filter(d => {
                     if (!d.fechaActualizacion) return false;
@@ -9330,6 +9698,8 @@ function getFilteredData() {
                 closeBulkDropdown('sharebulk', od.replace('sharebulk-', ''));
             } else if (od.startsWith('editbulk-')) {
                 closeBulkDropdown('editbulk', od.replace('editbulk-', ''));
+            } else if (od.startsWith('colvisbulk-')) {
+                closeBulkDropdown('colvisbulk', od.replace('colvisbulk-', ''));
             } else if (od.startsWith('dash-')) {
                 closeDashDropdown(od.replace('dash-', ''));
             } else if (od.startsWith('gen-')) {
@@ -9348,6 +9718,13 @@ function getFilteredData() {
                 const btn = document.getElementById(SHARE_BULK_BTNS[key]);
                 if (dropdown && !dropdown.contains(target) && btn && !btn.contains(target)) {
                     closeBulkDropdown('sharebulk', key);
+                }
+            } else if (String(openDropdown).startsWith('colvisbulk-')) {
+                const key = openDropdown.replace('colvisbulk-', '');
+                const dropdown = document.getElementById('dropdown-colvisbulk-' + key);
+                const btn = document.getElementById(COLVIS_BULK_BTNS[key]);
+                if (dropdown && !dropdown.contains(target) && btn && !btn.contains(target)) {
+                    closeBulkDropdown('colvisbulk', key);
                 }
             } else if (String(openDropdown).startsWith('editbulk-')) {
                 const key = openDropdown.replace('editbulk-', '');
@@ -9385,6 +9762,7 @@ function getFilteredData() {
             const od = String(openDropdown);
             if (od.startsWith('sharebulk-')) return document.getElementById('dropdown-sharebulk-' + od.replace('sharebulk-', ''));
             if (od.startsWith('editbulk-')) return document.getElementById('dropdown-editbulk-' + od.replace('editbulk-', ''));
+            if (od.startsWith('colvisbulk-')) return document.getElementById('dropdown-colvisbulk-' + od.replace('colvisbulk-', ''));
             if (od.startsWith('dash-')) return document.getElementById('dropdown-dash-' + od.replace('dash-', ''));
             if (od.startsWith('gen-')) return document.getElementById('dropdown-gen-' + od.replace('gen-', ''));
             return document.getElementById('dropdown-' + openDropdown);
@@ -9395,6 +9773,7 @@ function getFilteredData() {
             const od = String(openDropdown);
             if (od.startsWith('sharebulk-')) positionBulkDropdown('sharebulk', od.replace('sharebulk-', ''), SHARE_BULK_BTNS);
             else if (od.startsWith('editbulk-')) positionBulkDropdown('editbulk', od.replace('editbulk-', ''), EDIT_BULK_BTNS);
+            else if (od.startsWith('colvisbulk-')) positionBulkDropdown('colvisbulk', od.replace('colvisbulk-', ''), COLVIS_BULK_BTNS);
             else if (od.startsWith('dash-')) positionDashDropdown(od.replace('dash-', ''));
             else if (od.startsWith('gen-')) positionGenDropdown(od.replace('gen-', ''));
             else positionDropdown(openDropdown);
