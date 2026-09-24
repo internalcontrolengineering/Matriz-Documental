@@ -3140,11 +3140,7 @@
             </div>
             <div class="stats-grid" id="dashboardStats">
                 <div class="stat-card"><div class="label">📄 Total</div><div class="value blue" id="dashTotal">0</div></div>
-                <div class="stat-card"><div class="label">🆕 Nuevos</div><div class="value teal" id="dashNuevos">0</div></div>
-                <div class="stat-card"><div class="label">🔄 Actualizados</div><div class="value orange" id="dashActualizados">0</div></div>
-                <div class="stat-card"><div class="label">✅ Ratificados</div><div class="value green" id="dashRatificados">0</div></div>
-                <div class="stat-card"><div class="label">⏳ Pendientes</div><div class="value" style="color:var(--orange);" id="dashPendientes">0</div></div>
-                <div class="stat-card"><div class="label">❌ Eliminados</div><div class="value red" id="dashEliminados">0</div></div>
+                <!-- Tarjetas de estado se generan dinámicamente en renderDashboard -->
             </div>
             <div class="main-grid-3">
                 <div class="card">
@@ -5668,7 +5664,7 @@
         const TIPOS_DOC_PADRE = [
             'Guía Operativa', 'Manual Técnico', 'Plan', 'Política', 'Procedimiento', 'PyLG'
         ];
-        const CHART_COLORS = { estado: ['#6c8ebf', '#8fb5a8', '#d4a78c', '#f97316', '#b89bc7'], categoria: ['#8fb5d4', '#c7b88a',
+        const CHART_COLORS = { estado: ['#6c8ebf', '#8fb5a8', '#d4a78c', '#f97316', '#b89bc7', '#14b8a6', '#ef4444', '#8b5cf6', '#eab308', '#06b6d4', '#ec4899', '#84cc16', '#64748b', '#f59e0b'], categoria: ['#8fb5d4', '#c7b88a',
                 '#8cc7b8'
             ], clasificacion: ['#8fb5a8', '#d4c78a', '#b89bc7'], year: ['#6c8ebf', '#8fb5a8', '#d4a78c', '#b89bc7',
                 '#8fb5d4', '#c7b88a'
@@ -8749,34 +8745,124 @@ function getFilteredData() {
             return f;
         }
 
+        function getStatusIcon(status) {
+            const s = String(status || '').toLowerCase();
+            if (s.includes('nuevo')) return '🆕';
+            if (s.includes('actualiz')) return '🔄';
+            if (s.includes('ratific')) return '✅';
+            if (s.includes('pendient')) return '⏳';
+            if (s.includes('elimin')) return '❌';
+            if (s.includes('revis')) return '🔍';
+            if (s.includes('aprob')) return '👍';
+            if (s.includes('vigente')) return '📌';
+            return '📋';
+        }
+
+        function getStatusValueClass(status, index) {
+            const s = String(status || '').toLowerCase();
+            if (s.includes('nuevo')) return 'teal';
+            if (s.includes('actualiz')) return 'orange';
+            if (s.includes('ratific')) return 'green';
+            if (s.includes('elimin')) return 'red';
+            const cycle = ['blue', 'teal', 'orange', 'green', 'red'];
+            return cycle[index % cycle.length];
+        }
+
+        /** Estados a mostrar: catálogo + los presentes en los datos filtrados (orden estable). */
+        function collectDashboardStatuses(docs) {
+            const counts = {};
+            (docs || []).forEach(d => {
+                const st = String(d.status || '').trim() || 'Sin estado';
+                counts[st] = (counts[st] || 0) + 1;
+            });
+            const preferred = ['Nuevo', 'Actualizado', 'Ratificado', 'Pendiente', 'Eliminado'];
+            const fromCatalog = (data.catalogs && Array.isArray(data.catalogs.status))
+                ? data.catalogs.status.map(s => String(s).trim()).filter(Boolean)
+                : [];
+            const seen = new Set();
+            const ordered = [];
+            preferred.forEach(s => {
+                if (!seen.has(s) && (counts[s] != null || fromCatalog.includes(s))) {
+                    seen.add(s);
+                    ordered.push(s);
+                }
+            });
+            fromCatalog.forEach(s => {
+                if (!seen.has(s)) { seen.add(s); ordered.push(s); }
+            });
+            Object.keys(counts).sort((a, b) => a.localeCompare(b, 'es')).forEach(s => {
+                if (!seen.has(s)) { seen.add(s); ordered.push(s); }
+            });
+            // Incluir estados del catálogo aunque cuenten 0, y los que aparecen en datos
+            return ordered.map(s => ({ status: s, count: counts[s] || 0 }));
+        }
+
         function renderDashboard() {
             const f = getDashboardFilteredData();
             const total = f.length;
-            const nuevos = f.filter(d => d.status === 'Nuevo').length;
-            const actualizados = f.filter(d => d.status === 'Actualizado').length;
-            const ratificados = f.filter(d => d.status === 'Ratificado').length;
-            const pendientes = f.filter(d => d.status === 'Pendiente').length;
-            const eliminados = f.filter(d => d.status === 'Eliminado').length;
-            document.getElementById('dashTotal').textContent = total;
-            document.getElementById('dashNuevos').textContent = nuevos;
-            document.getElementById('dashActualizados').textContent = actualizados;
-            document.getElementById('dashRatificados').textContent = ratificados;
-            document.getElementById('dashPendientes').textContent = pendientes;
-            document.getElementById('dashEliminados').textContent = eliminados;
+            const statusRows = collectDashboardStatuses(f);
+
+            const totalEl = document.getElementById('dashTotal');
+            if (totalEl) totalEl.textContent = total;
+
+            const statsGrid = document.getElementById('dashboardStats');
+            if (statsGrid) {
+                // Conservar tarjeta Total; regenerar el resto
+                let htmlCards = '<div class="stat-card"><div class="label">📄 Total</div><div class="value blue" id="dashTotal">' + total + '</div></div>';
+                statusRows.forEach((row, i) => {
+                    const cls = getStatusValueClass(row.status, i);
+                    const icon = getStatusIcon(row.status);
+                    const safeLabel = String(row.status).replace(/</g, '&lt;');
+                    htmlCards += '<div class="stat-card"><div class="label">' + icon + ' ' + safeLabel +
+                        '</div><div class="value ' + cls + '">' + row.count + '</div></div>';
+                });
+                statsGrid.innerHTML = htmlCards;
+            }
+
+            const labels = statusRows.map(r => r.status);
+            const dataVals = statusRows.map(r => r.count);
+            const colors = labels.map((_, i) => CHART_COLORS.estado[i % CHART_COLORS.estado.length]);
 
             const sc = document.getElementById('dashStatusChart');
             if (sc) {
-                const labels = ['Nuevo', 'Actualizado', 'Ratificado', 'Pendiente', 'Eliminado'];
-                const data = [nuevos, actualizados, ratificados, pendientes, eliminados];
-                if (dashStatusChart) { dashStatusChart.data.labels = labels; dashStatusChart.data.datasets[0].data = data;
-                    dashStatusChart.update(); } else { dashStatusChart = new Chart(sc, { type: 'doughnut', data: { labels,
-                            datasets: [{ data, backgroundColor: CHART_COLORS.estado, borderWidth: 2,
-                                borderColor: 'var(--bg-secondary)' }] }, options: { responsive: true,
-                            maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: 'var(--text-primary)',
-                                    font: { size: 8 } } } }, cutout: '60%' } }); }
-                document.getElementById('statusAnnotation').innerHTML = labels.map((l, i) =>
-                    `<span class="anno-item"><span class="color-dot" style="background:${CHART_COLORS.estado[i]}"></span> ${l}: <span class="anno-value">${data[i]}</span></span>`
+                if (dashStatusChart) {
+                    dashStatusChart.data.labels = labels;
+                    dashStatusChart.data.datasets[0].data = dataVals;
+                    dashStatusChart.data.datasets[0].backgroundColor = colors;
+                    dashStatusChart.update();
+                } else {
+                    dashStatusChart = new Chart(sc, {
+                        type: 'doughnut',
+                        data: {
+                            labels,
+                            datasets: [{
+                                data: dataVals,
+                                backgroundColor: colors,
+                                borderWidth: 2,
+                                borderColor: 'var(--bg-secondary)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { color: 'var(--text-primary)', font: { size: 8 } }
+                                }
+                            },
+                            cutout: '60%'
+                        }
+                    });
+                }
+                const ann = document.getElementById('statusAnnotation');
+                if (ann) {
+                    ann.innerHTML = labels.map((l, i) =>
+                        '<span class="anno-item"><span class="color-dot" style="background:' + colors[i] +
+                        '"></span> ' + String(l).replace(/</g, '&lt;') + ': <span class="anno-value">' +
+                        dataVals[i] + '</span></span>'
                     ).join('');
+                }
             }
 
             const catData = {};
