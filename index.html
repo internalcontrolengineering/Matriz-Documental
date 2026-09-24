@@ -2984,7 +2984,7 @@
                     <button class="btn btn-primary manager-only" onclick="openAddModal()"><i class="fas fa-plus"></i> Agregar</button>
                 </div>
                 <div class="matriz-search">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye padre e hijos)..." oninput="renderAll()">
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye el documento origen y sus documentos relacionados)..." oninput="renderAll()">
                     <button class="search-clear" onclick="document.getElementById('searchInput').value=''; renderAll();" title="Limpiar búsqueda"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="filtros-generales" id="filtrosGenerales">
@@ -3255,7 +3255,7 @@
                     <label>Hipervínculo / Documento <span style="color:var(--red);">*</span></label>
                     <div class="hiper-field-wrap">
                         <div class="hiper-row">
-                            <input type="text" id="mHipervinculo" placeholder="https://… o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
+                            <input type="text" id="mHipervinculo" placeholder="Ingrese URL o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
                             <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('mHiperFile').click()" title="Subir documento"><i class="fas fa-upload"></i> Subir</button>
                             <button type="button" class="btn btn-sm" onclick="openHiperLink()" title="Abrir enlace"><i class="fas fa-external-link-alt"></i></button>
                             <button type="button" class="btn btn-sm" onclick="clearHiperLink()" title="Limpiar"><i class="fas fa-times"></i></button>
@@ -3322,11 +3322,12 @@
                 <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;"><i class="fas fa-key"></i> Contraseña y caducidad (General)</div>
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     <div>
-                        <label style="font-size:10px;">Contraseña acceso General <span style="color:var(--red);">*</span></label>
-                        <input type="text" id="colvisGeneralPassword" maxlength="60" placeholder="Cambiar invalida la anterior" autocomplete="off" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:11px;">
+                        <label style="font-size:10px;">Contraseña acceso General <span style="font-weight:400;color:var(--text-secondary);">(opcional)</span></label>
+                        <input type="text" id="colvisGeneralPassword" maxlength="60" placeholder="Vacío = sin acceso configurado" autocomplete="off" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:11px;">
+                        <p style="font-size:9px;color:var(--text-secondary);margin:4px 0 0 0;">Sin contraseña no se puede entrar a la matriz General. La vigencia solo aplica cuando hay contraseña; al vencer se borra y hay que configurarla de nuevo.</p>
                     </div>
                     <div>
-                        <label style="font-size:10px;">Tiempo de acceso (desde guardar)</label>
+                        <label style="font-size:10px;">Tiempo de acceso (desde guardar, solo si hay contraseña)</label>
                         <div class="share-exp-row">
                             <div class="num-stepper">
                                 <button type="button" onclick="stepNumber('colvisExpAmount', -1)">−</button>
@@ -3435,11 +3436,11 @@
             <div class="form-grid-modal" style="grid-template-columns:1fr;">
                 <div>
                     <label>Nombre de la solicitud <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="shareName" placeholder="Ej. Revisión auditoría Q3" maxlength="80">
+                    <input type="text" id="shareName" placeholder="Ingrese ID de la Solicitud" maxlength="80">
                 </div>
                 <div>
                     <label>Contraseña de acceso <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="sharePassword" placeholder="Contraseña para esta solicitud" maxlength="60" autocomplete="off">
+                    <input type="text" id="sharePassword" placeholder="Ingrese Contraseña para la Solicitud" maxlength="60" autocomplete="off">
                 </div>
                 <div>
                     <label>Tiempo de expiración <span style="color:var(--red);">*</span></label>
@@ -3847,21 +3848,16 @@
 
         function getBulkFilterOptions(key, currentFilters, excludeKey) {
             let base = [...(data.documents || [])];
-            if (excludeKey !== 'anio' && (currentFilters.anio||[]).length) {
-                base = base.filter(d => {
-                    if (!d.fechaActualizacion) return false;
-                    const p = String(d.fechaActualizacion).split('/');
-                    return p.length === 3 && currentFilters.anio.includes(p[2]);
-                });
-            }
+            if (excludeKey !== 'anio' && (currentFilters.anio||[]).length)
+                base = base.filter(d => matchesYearFilter(d, currentFilters.anio));
             if (excludeKey !== 'unidad' && (currentFilters.unidad||[]).length)
-                base = base.filter(d => currentFilters.unidad.includes(d.unidad));
+                base = base.filter(d => matchesFilterSelection(d.unidad, currentFilters.unidad));
             if (excludeKey !== 'area' && (currentFilters.area||[]).length)
-                base = base.filter(d => currentFilters.area.includes(d.area));
+                base = base.filter(d => matchesFilterSelection(d.area, currentFilters.area));
             if (excludeKey !== 'departamento' && (currentFilters.departamento||[]).length)
-                base = base.filter(d => currentFilters.departamento.includes(d.departamento));
+                base = base.filter(d => matchesFilterSelection(d.departamento, currentFilters.departamento));
             if (excludeKey !== 'categoria' && (currentFilters.categoria||[]).length)
-                base = base.filter(d => currentFilters.categoria.includes(d.categoria));
+                base = base.filter(d => matchesFilterSelection(d.categoria, currentFilters.categoria));
             if (key === 'anio') return getYearsFromDocs(base);
             return getUniqueValuesFromDocs(key, base);
         }
@@ -3870,17 +3866,11 @@
             const any = ['anio','unidad','area','departamento','categoria'].some(k => (filters[k]||[]).length > 0);
             if (!any) return [];
             let f = [...(data.documents || [])];
-            if ((filters.anio||[]).length) {
-                f = f.filter(d => {
-                    if (!d.fechaActualizacion) return false;
-                    const p = String(d.fechaActualizacion).split('/');
-                    return p.length === 3 && filters.anio.includes(p[2]);
-                });
-            }
-            if ((filters.unidad||[]).length) f = f.filter(d => filters.unidad.includes(d.unidad));
-            if ((filters.area||[]).length) f = f.filter(d => filters.area.includes(d.area));
-            if ((filters.departamento||[]).length) f = f.filter(d => filters.departamento.includes(d.departamento));
-            if ((filters.categoria||[]).length) f = f.filter(d => filters.categoria.includes(d.categoria));
+            if ((filters.anio||[]).length) f = f.filter(d => matchesYearFilter(d, filters.anio));
+            if ((filters.unidad||[]).length) f = f.filter(d => matchesFilterSelection(d.unidad, filters.unidad));
+            if ((filters.area||[]).length) f = f.filter(d => matchesFilterSelection(d.area, filters.area));
+            if ((filters.departamento||[]).length) f = f.filter(d => matchesFilterSelection(d.departamento, filters.departamento));
+            if ((filters.categoria||[]).length) f = f.filter(d => matchesFilterSelection(d.categoria, filters.categoria));
             return f;
         }
 
@@ -3892,7 +3882,7 @@
                 btn.textContent = BULK_DEFAULTS[key];
                 btn.classList.remove('filter-active');
             } else if (selected.length === 1) {
-                btn.textContent = selected[0];
+                btn.textContent = filterOptionLabel(selected[0]);
                 btn.classList.add('filter-active');
             } else {
                 btn.textContent = selected.length + ' sel.';
@@ -3910,8 +3900,9 @@
             }
             container.innerHTML = options.map(opt => {
                 const checked = selected.includes(opt) ? 'checked' : '';
+                const label = filterOptionLabel(opt);
                 return '<div class="option-item"><input type="checkbox" value="' +
-                    String(opt).replace(/"/g, '&quot;') + '" ' + checked + '><label>' + opt + '</label></div>';
+                    String(opt).replace(/"/g, '&quot;') + '" ' + checked + '><label>' + label + '</label></div>';
             }).join('');
         }
 
@@ -3961,7 +3952,12 @@
             if (!container) return;
             const options = JSON.parse(container.dataset.options || '[]');
             const q = (search || '').toLowerCase().trim();
-            const filtered = q ? options.filter(o => String(o).toLowerCase().includes(q)) : options;
+            const filtered = q
+                ? options.filter(o =>
+                    filterOptionLabel(o).toLowerCase().includes(q) ||
+                    String(o).toLowerCase().includes(q)
+                )
+                : options;
             renderBulkDropdownOptions(prefix, key, filtered, filters[key] || []);
             container.dataset.options = JSON.stringify(options);
         }
@@ -4311,7 +4307,7 @@
             const docList = docs.map(d => `• ${d.nomenclatura} ${d.nombre || ''}`.trim()).join('\n');
             const subject = encodeURIComponent(`Acceso a documentación normativa: ${name}`);
             const body = encodeURIComponent(
-                `Se ha compartido acceso a documentos del Sistema de Control Interno Normativo.\n\n` +
+                `Se ha compartido acceso a la Matriz de Documentación Normativa Interna del Departamento de Control Interno.\n\n` +
                 `Solicitud: ${name}\n` +
                 `Contraseña: ${password}\n` +
                 `Expira: ${expDate} (${solicitud.expirationLabel})\n\n` +
@@ -4392,15 +4388,67 @@
                 return true;
             } catch (e) { return false; }
         }
+        /** Hay acceso General usable: contraseña definida y no vencida. */
+        function isGeneralAccessConfigured(cfg) {
+            if (!cfg) return false;
+            const pwd = String(cfg.password || '').trim();
+            if (!pwd) return false;
+            if (cfg.expiresAt && Number(cfg.expiresAt) <= Date.now()) return false;
+            return true;
+        }
+
+        function isGeneralAccessExpired(cfg) {
+            // Solo tiene sentido si hubo contraseña y fecha de caducidad
+            if (!cfg) return false;
+            const pwd = String(cfg.password || '').trim();
+            if (!pwd || !cfg.expiresAt) return false;
+            return Number(cfg.expiresAt) <= Date.now();
+        }
+
+        /**
+         * Si la vigencia venció, borra la contraseña (y la caducidad).
+         * El resto de la config (columnas, filtros, etc.) se conserva para cuando
+         * Control Interno vuelva a poner una contraseña.
+         * Devuelve true si se limpió.
+         */
+        async function clearExpiredGeneralAccessPassword(cfg) {
+            if (!cfg || !isGeneralAccessExpired(cfg)) return false;
+            const cleaned = {
+                ...cfg,
+                password: '',
+                expiresAt: null,
+                expirationLabel: '',
+                updatedAt: Date.now(),
+                configVersion: Date.now(),
+                clearedByExpiry: true
+            };
+            generalAccessConfig = cleaned;
+            saveGeneralAccessLocal(cleaned);
+            await saveGeneralAccessToSupabase(cleaned);
+            return true;
+        }
+
         async function initGeneralAccessConfig() {
             const remote = await loadGeneralAccessFromSupabase();
             const local = loadGeneralAccessLocal();
-            generalAccessConfig = remote || local || null;
-            if (generalAccessConfig) saveGeneralAccessLocal(generalAccessConfig);
-        }
-        function isGeneralAccessExpired(cfg) {
-            if (!cfg || !cfg.expiresAt) return false;
-            return Number(cfg.expiresAt) <= Date.now();
+            // Preferir la más reciente por updatedAt / configVersion
+            let cfg = null;
+            if (remote && local) {
+                const rTs = Number(remote.configVersion || remote.updatedAt || 0);
+                const lTs = Number(local.configVersion || local.updatedAt || 0);
+                cfg = rTs >= lTs ? remote : local;
+            } else {
+                cfg = remote || local || null;
+            }
+            generalAccessConfig = cfg;
+            if (generalAccessConfig) {
+                // Al cargar: si ya venció, borrar contraseña automáticamente
+                if (isGeneralAccessExpired(generalAccessConfig)) {
+                    await clearExpiredGeneralAccessPassword(generalAccessConfig);
+                } else {
+                    saveGeneralAccessLocal(generalAccessConfig);
+                }
+            }
         }
         function toggleColvisBulkDropdown(key, event) {
             toggleBulkDropdown('colvisbulk', key, event, colvisBulkFilters, COLVIS_BULK_BTNS);
@@ -4783,7 +4831,7 @@
             ).join('\n') || '(sin documentos)';
             const subject = encodeURIComponent('Actualización de solicitud: ' + name);
             const body = encodeURIComponent(
-                'Se ha actualizado una solicitud de acceso a la Matriz de Documentación Normativa Interna.\n\n' +
+                'Se ha actualizado una solicitud de acceso a la Matriz de Documentación Normativa Interna del Departamento de Control Interno.\n\n' +
                 'Solicitud: ' + name + '\n' +
                 'Contraseña: ' + password + '\n' +
                 'Nueva expiración: ' + expDate + ' (' + sol.expirationLabel + ')\n' +
@@ -4858,19 +4906,29 @@
                     const afterIds = sharedSolicitudes.map(s => s.id);
                     const solsChanged = beforeIds.length !== afterIds.length || snapshot() !== last;
 
-                    const prevPwd = generalAccessConfig && generalAccessConfig.password;
+                    const prevPwd = generalAccessConfig && String(generalAccessConfig.password || '').trim();
                     const prevVer = generalAccessConfig && (generalAccessConfig.configVersion || generalAccessConfig.updatedAt);
                     const prevDocs = generalAccessConfig && JSON.stringify(generalAccessConfig.documentIds || []);
+                    const wasConfigured = !!prevPwd;
                     await initGeneralAccessConfig();
+                    // init ya limpia contraseña si venció
                     let genKick = null;
-                    if (prevPwd && generalAccessConfig) {
-                        if (prevPwd !== generalAccessConfig.password) genKick = 'password';
-                        else if (
+                    if (wasConfigured && generalAccessConfig) {
+                        const newPwd = String(generalAccessConfig.password || '').trim();
+                        if (!newPwd) {
+                            // Contraseña borrada (vencimiento o deshabilitado por Control Interno)
+                            genKick = generalAccessConfig.clearedByExpiry ? 'expired' : 'removed';
+                        } else if (prevPwd !== newPwd) {
+                            genKick = 'password';
+                        } else if (
                             (prevVer && generalAccessConfig.configVersion && prevVer !== generalAccessConfig.configVersion) ||
                             prevDocs !== JSON.stringify(generalAccessConfig.documentIds || [])
-                        ) genKick = 'config';
+                        ) {
+                            genKick = 'config';
+                        }
+                    } else if (wasConfigured && !isGeneralAccessConfigured(generalAccessConfig)) {
+                        genKick = 'removed';
                     }
-                    if (generalAccessConfig && isGeneralAccessExpired(generalAccessConfig)) genKick = genKick || 'expired';
 
                     if (solsChanged || genKick) {
                         last = snapshot();
@@ -4882,9 +4940,11 @@
                             : genKick === 'config'
                             ? 'Se actualizó la configuración de la matriz general.'
                             : genKick === 'expired'
-                            ? 'El acceso a la matriz general ha expirado.'
+                            ? 'El acceso a la matriz general ha expirado. Control Interno no ha configurado el acceso.'
+                            : genKick === 'removed'
+                            ? 'Control Interno no ha configurado el acceso'
                             : 'Una o más solicitudes caducaron o fueron eliminadas';
-                        showToast(msg, 'warning', 3200);
+                        showToast(msg, 'warning', 3500);
                     }
                 } catch (e) {
                     console.warn('[Gateway poll]', e);
@@ -4917,7 +4977,7 @@
                             <div class="gateway-card general" id="gwGeneral">
                                 <div class="gw-icon"><i class="fas fa-globe"></i></div>
                                 <div class="gw-title">General</div>
-                                <div class="gw-meta">Matriz configurada<br>(requiere contraseña)</div>
+                                <div class="gw-meta" id="gwGeneralMeta">Matriz general<br>Ver estado de acceso</div>
                             </div>
                             ${cards}
                         </div>
@@ -4928,17 +4988,31 @@
                 </div>`;
             document.body.insertAdjacentHTML('beforeend', htmlGw);
 
+            // Actualizar texto de estado de la tarjeta General
+            (async () => {
+                await initGeneralAccessConfig();
+                const meta = document.getElementById('gwGeneralMeta');
+                if (!meta) return;
+                if (isGeneralAccessConfigured(generalAccessConfig)) {
+                    const exp = generalAccessConfig.expiresAt
+                        ? new Date(generalAccessConfig.expiresAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+                        : '—';
+                    meta.innerHTML = 'Acceso habilitado<br>Vigencia hasta: ' + exp;
+                } else {
+                    meta.innerHTML = 'Sin acceso configurado<br>por Control Interno';
+                }
+            })();
+
             document.getElementById('gwGeneral').onclick = async () => {
                 await initGeneralAccessConfig();
+                // Si venció, la contraseña ya se borró en initGeneralAccessConfig
+                if (!isGeneralAccessConfigured(generalAccessConfig)) {
+                    showToast('Control Interno no ha configurado el acceso', 'warning', 3500);
+                    const meta = document.getElementById('gwGeneralMeta');
+                    if (meta) meta.innerHTML = 'Sin acceso configurado<br>por Control Interno';
+                    return;
+                }
                 const cfg = generalAccessConfig;
-                if (!cfg || !cfg.password) {
-                    showToast('El acceso General aún no está configurado por Control Interno', 'warning');
-                    return;
-                }
-                if (isGeneralAccessExpired(cfg)) {
-                    showToast('El acceso General ha expirado. Solicite una nueva configuración.', 'warning');
-                    return;
-                }
                 const pwd = await showPasswordConfirm({
                     title: 'Acceso General',
                     message: 'Ingrese la contraseña de la matriz general.',
@@ -5352,8 +5426,17 @@
                 return;
             }
             if (generalViewActive && generalAccessConfig && isGeneralAccessExpired(generalAccessConfig)) {
+                // Al vencer: borrar contraseña y dejar el acceso como no configurado
+                clearExpiredGeneralAccessPassword(generalAccessConfig).then(() => {
+                    generalViewActive = false;
+                    exitSharedViewToConsultorGateway('El acceso a la matriz general ha expirado. Control Interno no ha configurado el acceso.');
+                });
+                return;
+            }
+            // Si ya no hay contraseña (borrada por vencimiento o por Control Interno)
+            if (generalViewActive && !isGeneralAccessConfigured(generalAccessConfig)) {
                 generalViewActive = false;
-                exitSharedViewToConsultorGateway('El acceso General ha expirado. Sesión cerrada.');
+                exitSharedViewToConsultorGateway('Control Interno no ha configurado el acceso');
                 return;
             }
             const minutes = Math.floor(remaining / 60000);
@@ -5728,18 +5811,61 @@
             return all;
         }
 
+        // Token vacío en filtros: valor real '' mostrado como "(vacío)"
+        const FILTER_EMPTY_VALUE = '';
+        const FILTER_EMPTY_LABEL = '(vacío)';
+
+        function normFilterField(val) {
+            return String(val == null ? '' : val).trim();
+        }
+
+        function filterOptionLabel(opt) {
+            return (opt === FILTER_EMPTY_VALUE || opt == null) ? FILTER_EMPTY_LABEL : String(opt);
+        }
+
+        function getDocYear(d) {
+            if (!d || !d.fechaActualizacion) return FILTER_EMPTY_VALUE;
+            const p = String(d.fechaActualizacion).split('/');
+            return (p.length === 3 && p[2]) ? String(p[2]).trim() : FILTER_EMPTY_VALUE;
+        }
+
+        /** true si el valor del documento está entre los seleccionados (incluye vacío) */
+        function matchesFilterSelection(docVal, selectedValues) {
+            if (!selectedValues || selectedValues.length === 0) return true;
+            return selectedValues.includes(normFilterField(docVal));
+        }
+
+        function matchesYearFilter(d, selectedYears) {
+            if (!selectedYears || selectedYears.length === 0) return true;
+            return selectedYears.includes(getDocYear(d));
+        }
+
         function getUniqueValuesFromDocs(key, docs) {
-            const src = docs || data.documents;
-            const vals = [...new Set(src.map(d => String(d[key] || '').trim()).filter(v => v !== ''))];
-            return vals.sort();
+            const src = docs || data.documents || [];
+            const set = new Set();
+            let hasEmpty = false;
+            src.forEach(d => {
+                const v = normFilterField(d[key]);
+                if (v === FILTER_EMPTY_VALUE) hasEmpty = true;
+                else set.add(v);
+            });
+            const vals = [...set].sort((a, b) => String(a).localeCompare(String(b), 'es', { sensitivity: 'base' }));
+            if (hasEmpty) vals.unshift(FILTER_EMPTY_VALUE);
+            return vals;
         }
 
         function getYearsFromDocs(docs) {
-            const src = docs || data.documents;
+            const src = docs || data.documents || [];
             const years = new Set();
-            src.forEach(d => { if (d.fechaActualizacion) { const p = d.fechaActualizacion.split('/'); if (p.length === 3)
-                        years.add(p[2]); } });
-            return [...years].sort();
+            let hasEmpty = false;
+            src.forEach(d => {
+                const y = getDocYear(d);
+                if (y === FILTER_EMPTY_VALUE) hasEmpty = true;
+                else years.add(y);
+            });
+            const list = [...years].sort();
+            if (hasEmpty) list.unshift(FILTER_EMPTY_VALUE);
+            return list;
         }
 
         // ============================================================
@@ -6123,18 +6249,22 @@
 
                 // Detectar cambio de acceso General (contraseña vs resto de config)
                 const prevGen = generalAccessConfig ? {
-                    password: generalAccessConfig.password,
+                    password: String(generalAccessConfig.password || '').trim(),
                     configVersion: generalAccessConfig.configVersion || generalAccessConfig.updatedAt,
                     expiresAt: generalAccessConfig.expiresAt,
                     documentIds: JSON.stringify(generalAccessConfig.documentIds || []),
                     hideDashboard: !!generalAccessConfig.hideDashboard
                 } : null;
                 await initGeneralAccessConfig();
+                // init limpia contraseña si la vigencia ya venció
                 if (!isManager) {
                     const onGateway = !!document.getElementById('accessGateway');
                     let kickReason = null; // 'password' | 'config' | 'expired' | 'removed'
-                    if (prevGen && generalAccessConfig) {
-                        if (prevGen.password !== generalAccessConfig.password) {
+                    if (prevGen && prevGen.password) {
+                        const newPwd = generalAccessConfig ? String(generalAccessConfig.password || '').trim() : '';
+                        if (!newPwd) {
+                            kickReason = (generalAccessConfig && generalAccessConfig.clearedByExpiry) ? 'expired' : 'removed';
+                        } else if (prevGen.password !== newPwd) {
                             kickReason = 'password';
                         } else if (
                             (prevGen.configVersion && generalAccessConfig.configVersion && prevGen.configVersion !== generalAccessConfig.configVersion) ||
@@ -6144,19 +6274,19 @@
                         ) {
                             kickReason = 'config';
                         }
-                    } else if (prevGen && !generalAccessConfig) {
+                    } else if (prevGen && prevGen.password && !isGeneralAccessConfigured(generalAccessConfig)) {
                         kickReason = 'removed';
                     }
-                    const genExpired = generalAccessConfig && isGeneralAccessExpired(generalAccessConfig);
-                    if (genExpired && (generalViewActive || onGateway)) {
+                    // Sesión en vista General y ya no hay acceso configurado
+                    if (generalViewActive && !isGeneralAccessConfigured(generalAccessConfig)) {
                         kickReason = kickReason || 'expired';
                     }
 
                     const kickMsg = {
                         password: 'Se cambió la contraseña de la matriz general. Debe ingresar de nuevo con la nueva contraseña.',
                         config: 'Se actualizó la configuración de la matriz general (documentos, columnas o vigencia). Sesión cerrada.',
-                        expired: 'El acceso a la matriz general ha expirado. Sesión cerrada.',
-                        removed: 'El acceso a la matriz general ya no está disponible. Sesión cerrada.'
+                        expired: 'El acceso a la matriz general ha expirado. Control Interno no ha configurado el acceso.',
+                        removed: 'Control Interno no ha configurado el acceso'
                     };
 
                     if (generalViewActive && kickReason) {
@@ -6428,29 +6558,37 @@
 
             const hideDash = !!(document.getElementById('colvis_hideDashboard')?.checked);
             const password = (document.getElementById('colvisGeneralPassword')?.value || '').trim();
-            if (!password) {
-                showToast('Indique una contraseña para el acceso General', 'warning');
-                return;
-            }
             const exp = readExpFromInputs('colvisExpAmount', 'colvisExpUnit');
-            if (!exp.amount || exp.amount < 1) {
-                showToast('Indique un tiempo de acceso válido', 'warning');
-                return;
+
+            // Con contraseña: la vigencia es obligatoria y empieza al guardar
+            if (password) {
+                if (!exp.amount || exp.amount < 1) {
+                    showToast('Indique un tiempo de acceso válido (la vigencia aplica al poner contraseña)', 'warning');
+                    return;
+                }
             }
+
             const anyFilter = ['anio','unidad','area','departamento','categoria'].some(k => (colvisBulkFilters[k]||[]).length > 0);
             if (anyFilter) syncColvisDocsFromBulkFilters(true);
 
-            const prevPassword = (generalAccessConfig && generalAccessConfig.password) || '';
+            const prevPassword = String((generalAccessConfig && generalAccessConfig.password) || '').trim();
             const passwordChanged = prevPassword && prevPassword !== password;
+            const accessEnabled = !!password;
 
             const parts = [];
             parts.push(visibleKeys.length + ' columna(s) visibles');
             if (hideDash) parts.push('Dashboard oculto');
             if (anyFilter) parts.push(colvisBulkDocIds.length + ' documentos');
-            parts.push('caduca en ' + formatExpirationLabel(exp.amount, exp.unit));
+            if (accessEnabled) {
+                parts.push('acceso habilitado, caduca en ' + formatExpirationLabel(exp.amount, exp.unit));
+            } else {
+                parts.push('sin contraseña → acceso General deshabilitado');
+            }
+            if (passwordChanged) parts.push('la contraseña anterior dejará de funcionar');
+
             const okConfirm = await showConfirm({
                 title: 'Guardar configuración de matriz general',
-                message: 'Se guardará: ' + parts.join('; ') + (passwordChanged ? '. La contraseña anterior dejará de funcionar.' : '') + ' ¿Continuar?',
+                message: 'Se guardará: ' + parts.join('; ') + '. ¿Continuar?',
                 type: 'save',
                 confirmText: 'Guardar',
                 cancelText: 'Cancelar'
@@ -6465,11 +6603,13 @@
 
             const now = Date.now();
             const cfg = {
+                // Sin contraseña: acceso no configurado (no se puede entrar)
                 password: password,
-                expiresAt: now + parseExpirationMs(exp.amount, exp.unit),
-                expAmount: exp.amount,
-                expUnit: exp.unit,
-                expirationLabel: formatExpirationLabel(exp.amount, exp.unit),
+                // La vigencia solo aplica cuando hay contraseña; empieza al guardar
+                expiresAt: accessEnabled ? (now + parseExpirationMs(exp.amount, exp.unit)) : null,
+                expAmount: exp.amount || 30,
+                expUnit: exp.unit || 'd',
+                expirationLabel: accessEnabled ? formatExpirationLabel(exp.amount, exp.unit) : '',
                 documentIds: anyFilter ? [...colvisBulkDocIds] : [],
                 nomenclaturas: anyFilter
                     ? (data.documents || []).filter(d => colvisBulkDocIds.includes(Number(d.id))).map(d => d.nomenclatura)
@@ -6483,35 +6623,36 @@
                 },
                 hideDashboard: hideDash,
                 updatedAt: now,
-                configVersion: now
+                configVersion: now,
+                clearedByExpiry: false
             };
             generalAccessConfig = cfg;
             saveGeneralAccessLocal(cfg);
             await saveGeneralAccessToSupabase(cfg);
 
-            // Correo de acceso general
-            const link = 'https://internalcontrolengineering.github.io/Matriz-Documental/';
-            const expDate = new Date(cfg.expiresAt).toLocaleString('es-ES', {
-                day: '2-digit', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
-            const subject = encodeURIComponent('Acceso a matriz general — Control Interno');
-            const body = encodeURIComponent(
-                'Se ha configurado / actualizado el acceso a la Matriz General de Documentación Normativa Interna.\n\n' +
-                'Contraseña de acceso General: ' + password + '\n' +
-                'Vigencia hasta: ' + expDate + ' (' + cfg.expirationLabel + ' desde la configuración)\n' +
-                'Documentos incluidos: ' + (cfg.documentIds.length ? cfg.documentIds.length + ' (según filtros)' : 'matriz completa') + '\n\n' +
-                'Para acceder:\n' +
-                '1. Abra: ' + link + '\n' +
-                '2. Perfil Consultor → tarjeta General\n' +
-                '3. Ingrese la contraseña indicada\n\n' +
-                'Atentamente,\nControl Interno'
-            );
-            try { window.open('mailto:?subject=' + subject + '&body=' + body, '_blank'); } catch (e) {}
+            // Correo solo si hay contraseña (acceso habilitado)
+            if (accessEnabled) {
+                const link = 'https://internalcontrolengineering.github.io/Matriz-Documental/';
+                const expDate = new Date(cfg.expiresAt).toLocaleString('es-ES', {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+                const subject = encodeURIComponent('Acceso a matriz general — Control Interno');
+                const body = encodeURIComponent(
+                    'Se ha configurado / actualizado el acceso a la Matriz General de Documentación Normativa Interna.\n\n' +
+                    'Contraseña de acceso General: ' + password + '\n' +
+                    'Vigencia hasta: ' + expDate + ' (' + cfg.expirationLabel + ' desde la configuración)\n' +
+                    'Documentos incluidos: ' + (cfg.documentIds.length ? cfg.documentIds.length + ' (según filtros)' : 'matriz completa') + '\n\n' +
+                    'Para acceder:\n' +
+                    '1. Abra: ' + link + '\n' +
+                    '2. Perfil Consultor → tarjeta General\n' +
+                    '3. Ingrese la contraseña indicada\n\n' +
+                    'Atentamente,\nControl Interno'
+                );
+                try { window.open('mailto:?subject=' + subject + '&body=' + body, '_blank'); } catch (e) {}
+            }
 
-            // Si hay sesión local en General con contraseña distinta, no aplica a esta pestaña manager;
-            // el kick a consultores se hace por realtime/poll
-            if (passwordChanged) {
+            if (passwordChanged || !accessEnabled) {
                 try {
                     localStorage.setItem('matriz_general_pwd_revoked_at', String(now));
                 } catch (e) {}
@@ -6519,7 +6660,11 @@
 
             applyViewOnlyMode();
             closeColumnVisibilityModal();
-            showToast('Configuración de matriz general guardada y correo abierto', 'success');
+            if (accessEnabled) {
+                showToast('Acceso General habilitado. Configuración guardada y correo abierto', 'success');
+            } else {
+                showToast('Configuración guardada. Acceso General deshabilitado (sin contraseña)', 'info', 3500);
+            }
         }
 
         function isColumnHiddenForStakeholder(key) {
@@ -6983,23 +7128,19 @@ function loadRequiredFieldsLocal() {
         function getDataWithGeneralFilters() {
             let filtered = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...data.documents];
             if (generalFilters.anio && generalFilters.anio.length > 0) {
-                filtered = filtered.filter(d => {
-                    if (!d.fechaActualizacion) return false;
-                    const p = String(d.fechaActualizacion).split('/');
-                    return p.length === 3 && generalFilters.anio.includes(p[2]);
-                });
+                filtered = filtered.filter(d => matchesYearFilter(d, generalFilters.anio));
             }
             if (generalFilters.unidad && generalFilters.unidad.length > 0) {
-                filtered = filtered.filter(d => generalFilters.unidad.includes(d.unidad));
+                filtered = filtered.filter(d => matchesFilterSelection(d.unidad, generalFilters.unidad));
             }
             if (generalFilters.area && generalFilters.area.length > 0) {
-                filtered = filtered.filter(d => generalFilters.area.includes(d.area));
+                filtered = filtered.filter(d => matchesFilterSelection(d.area, generalFilters.area));
             }
             if (generalFilters.departamento && generalFilters.departamento.length > 0) {
-                filtered = filtered.filter(d => generalFilters.departamento.includes(d.departamento));
+                filtered = filtered.filter(d => matchesFilterSelection(d.departamento, generalFilters.departamento));
             }
             if (generalFilters.categoria && generalFilters.categoria.length > 0) {
-                filtered = filtered.filter(d => generalFilters.categoria.includes(d.categoria));
+                filtered = filtered.filter(d => matchesFilterSelection(d.categoria, generalFilters.categoria));
             }
             return filtered;
         }
@@ -7008,7 +7149,7 @@ function loadRequiredFieldsLocal() {
             let filtered = [...baseData];
             for (const [key, values] of Object.entries(currentFilters)) {
                 if (values && values.length > 0) {
-                    filtered = filtered.filter(doc => values.includes(String(doc[key] || '')));
+                    filtered = filtered.filter(doc => matchesFilterSelection(doc[key], values));
                 }
             }
             return filtered;
@@ -7171,9 +7312,10 @@ function getFilteredData() {
             }
             container.innerHTML = options.map(opt => {
                 const checked = selected.includes(opt) ? 'checked' : '';
+                const label = filterOptionLabel(opt);
                 return `<div class="option-item">
-                    <input type="checkbox" value="${opt.replace(/"/g, '&quot;')}" ${checked} onchange="onOptionChange('${column}', this)">
-                    <label>${opt}</label>
+                    <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onOptionChange('${column}', this)">
+                    <label>${label}</label>
                 </div>`;
             }).join('');
             container.dataset.options = JSON.stringify(options);
@@ -7268,12 +7410,18 @@ function getFilteredData() {
             const selected = currentFilters[column] || [];
             const searchLower = search.toLowerCase().trim();
             let filtered = options;
-            if (searchLower) filtered = options.filter(o => o.toLowerCase().includes(searchLower));
+            if (searchLower) {
+                filtered = options.filter(o =>
+                    filterOptionLabel(o).toLowerCase().includes(searchLower) ||
+                    String(o).toLowerCase().includes(searchLower)
+                );
+            }
             container.innerHTML = filtered.map(opt => {
                 const checked = selected.includes(opt) ? 'checked' : '';
+                const label = filterOptionLabel(opt);
                 return `<div class="option-item">
-                    <input type="checkbox" value="${opt.replace(/"/g, '&quot;')}" ${checked} onchange="onOptionChange('${column}', this)">
-                    <label>${opt}</label>
+                    <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onOptionChange('${column}', this)">
+                    <label>${label}</label>
                 </div>`;
             }).join('');
         }
@@ -7311,27 +7459,23 @@ function getFilteredData() {
             let baseData = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...data.documents];
             for (const [key, values] of Object.entries(currentFilters)) {
                 if (values && values.length > 0) {
-                    baseData = baseData.filter(doc => values.includes(String(doc[key] || '')));
+                    baseData = baseData.filter(doc => matchesFilterSelection(doc[key], values));
                 }
             }
             if (excludeKey !== 'anio' && generalFilters.anio.length > 0) {
-                baseData = baseData.filter(d => {
-                    if (!d.fechaActualizacion) return false;
-                    const p = d.fechaActualizacion.split('/');
-                    return p.length === 3 && generalFilters.anio.includes(p[2]);
-                });
+                baseData = baseData.filter(d => matchesYearFilter(d, generalFilters.anio));
             }
             if (excludeKey !== 'unidad' && generalFilters.unidad.length > 0) {
-                baseData = baseData.filter(d => generalFilters.unidad.includes(d.unidad));
+                baseData = baseData.filter(d => matchesFilterSelection(d.unidad, generalFilters.unidad));
             }
             if (excludeKey !== 'area' && generalFilters.area.length > 0) {
-                baseData = baseData.filter(d => generalFilters.area.includes(d.area));
+                baseData = baseData.filter(d => matchesFilterSelection(d.area, generalFilters.area));
             }
             if (excludeKey !== 'departamento' && generalFilters.departamento.length > 0) {
-                baseData = baseData.filter(d => generalFilters.departamento.includes(d.departamento));
+                baseData = baseData.filter(d => matchesFilterSelection(d.departamento, generalFilters.departamento));
             }
             if (excludeKey !== 'categoria' && generalFilters.categoria.length > 0) {
-                baseData = baseData.filter(d => generalFilters.categoria.includes(d.categoria));
+                baseData = baseData.filter(d => matchesFilterSelection(d.categoria, generalFilters.categoria));
             }
             return baseData;
         }
@@ -7354,7 +7498,7 @@ function getFilteredData() {
                 btn.textContent = GEN_FILTER_DEFAULTS[key];
                 btn.classList.remove('filter-active');
             } else if (selected.length === 1) {
-                btn.textContent = selected[0];
+                btn.textContent = filterOptionLabel(selected[0]);
                 btn.classList.add('filter-active');
             } else {
                 btn.textContent = `${selected.length} sel.`;
@@ -7374,9 +7518,10 @@ function getFilteredData() {
             container.dataset.options = JSON.stringify(options);
             container.innerHTML = options.map(opt => {
                 const checked = selected.includes(opt) ? 'checked' : '';
+                const label = filterOptionLabel(opt);
                 return `<div class="option-item">
                     <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onGenOptionChange('${key}', this)">
-                    <label>${opt}</label>
+                    <label>${label}</label>
                 </div>`;
             }).join('');
         }
@@ -7448,12 +7593,18 @@ function getFilteredData() {
             const selected = generalFilters[key] || [];
             const searchLower = search.toLowerCase().trim();
             let filtered = options;
-            if (searchLower) filtered = options.filter(o => String(o).toLowerCase().includes(searchLower));
+            if (searchLower) {
+                filtered = options.filter(o =>
+                    filterOptionLabel(o).toLowerCase().includes(searchLower) ||
+                    String(o).toLowerCase().includes(searchLower)
+                );
+            }
             container.innerHTML = filtered.map(opt => {
                 const checked = selected.includes(opt) ? 'checked' : '';
+                const label = filterOptionLabel(opt);
                 return `<div class="option-item">
                     <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onGenOptionChange('${key}', this)">
-                    <label>${opt}</label>
+                    <label>${label}</label>
                 </div>`;
             }).join('');
         }
@@ -8727,20 +8878,16 @@ function getFilteredData() {
         function getDashboardFilteredData() {
             let f = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...(data.documents || [])];
             if (dashboardFilters.anio && dashboardFilters.anio.length > 0) {
-                f = f.filter(d => {
-                    if (!d.fechaActualizacion) return false;
-                    const p = d.fechaActualizacion.split('/');
-                    return p.length === 3 && dashboardFilters.anio.includes(p[2]);
-                });
+                f = f.filter(d => matchesYearFilter(d, dashboardFilters.anio));
             }
             if (dashboardFilters.unidad && dashboardFilters.unidad.length > 0) {
-                f = f.filter(d => dashboardFilters.unidad.includes(d.unidad));
+                f = f.filter(d => matchesFilterSelection(d.unidad, dashboardFilters.unidad));
             }
             if (dashboardFilters.area && dashboardFilters.area.length > 0) {
-                f = f.filter(d => dashboardFilters.area.includes(d.area));
+                f = f.filter(d => matchesFilterSelection(d.area, dashboardFilters.area));
             }
             if (dashboardFilters.categoria && dashboardFilters.categoria.length > 0) {
-                f = f.filter(d => dashboardFilters.categoria.includes(d.categoria));
+                f = f.filter(d => matchesFilterSelection(d.categoria, dashboardFilters.categoria));
             }
             return f;
         }
@@ -8987,20 +9134,16 @@ function getFilteredData() {
         function getBaseDataForDashFilter(excludeKey) {
             let baseData = (typeof getScopedDocuments === 'function') ? getScopedDocuments() : [...(data.documents || [])];
             if (excludeKey !== 'anio' && dashboardFilters.anio.length > 0) {
-                baseData = baseData.filter(d => {
-                    if (!d.fechaActualizacion) return false;
-                    const p = d.fechaActualizacion.split('/');
-                    return p.length === 3 && dashboardFilters.anio.includes(p[2]);
-                });
+                baseData = baseData.filter(d => matchesYearFilter(d, dashboardFilters.anio));
             }
             if (excludeKey !== 'unidad' && dashboardFilters.unidad.length > 0) {
-                baseData = baseData.filter(d => dashboardFilters.unidad.includes(d.unidad));
+                baseData = baseData.filter(d => matchesFilterSelection(d.unidad, dashboardFilters.unidad));
             }
             if (excludeKey !== 'area' && dashboardFilters.area.length > 0) {
-                baseData = baseData.filter(d => dashboardFilters.area.includes(d.area));
+                baseData = baseData.filter(d => matchesFilterSelection(d.area, dashboardFilters.area));
             }
             if (excludeKey !== 'categoria' && dashboardFilters.categoria && dashboardFilters.categoria.length > 0) {
-                baseData = baseData.filter(d => dashboardFilters.categoria.includes(d.categoria));
+                baseData = baseData.filter(d => matchesFilterSelection(d.categoria, dashboardFilters.categoria));
             }
             return baseData;
         }
@@ -9022,7 +9165,7 @@ function getFilteredData() {
                 btn.textContent = DASH_FILTER_DEFAULTS[key];
                 btn.classList.remove('filter-active');
             } else if (selected.length === 1) {
-                btn.textContent = selected[0];
+                btn.textContent = filterOptionLabel(selected[0]);
                 btn.classList.add('filter-active');
             } else {
                 btn.textContent = `${selected.length} sel.`;
@@ -9042,9 +9185,10 @@ function getFilteredData() {
             container.dataset.options = JSON.stringify(options);
             container.innerHTML = options.map(opt => {
                 const checked = selected.includes(opt) ? 'checked' : '';
+                const label = filterOptionLabel(opt);
                 return `<div class="option-item">
                     <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onDashOptionChange('${key}', this)">
-                    <label>${opt}</label>
+                    <label>${label}</label>
                 </div>`;
             }).join('');
         }
@@ -9116,12 +9260,18 @@ function getFilteredData() {
             const selected = dashboardFilters[key] || [];
             const searchLower = search.toLowerCase().trim();
             let filtered = options;
-            if (searchLower) filtered = options.filter(o => String(o).toLowerCase().includes(searchLower));
+            if (searchLower) {
+                filtered = options.filter(o =>
+                    filterOptionLabel(o).toLowerCase().includes(searchLower) ||
+                    String(o).toLowerCase().includes(searchLower)
+                );
+            }
             container.innerHTML = filtered.map(opt => {
                 const checked = selected.includes(opt) ? 'checked' : '';
+                const label = filterOptionLabel(opt);
                 return `<div class="option-item">
                     <input type="checkbox" value="${String(opt).replace(/"/g, '&quot;')}" ${checked} onchange="onDashOptionChange('${key}', this)">
-                    <label>${opt}</label>
+                    <label>${label}</label>
                 </div>`;
             }).join('');
         }
