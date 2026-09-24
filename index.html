@@ -119,7 +119,7 @@
             gap: 14px;
         }
         .header-logo {
-            height: 70px;
+            height: 52px;
             width: auto;
             object-fit: contain;
             border-radius: 6px;
@@ -2984,7 +2984,7 @@
                     <button class="btn btn-primary manager-only" onclick="openAddModal()"><i class="fas fa-plus"></i> Agregar</button>
                 </div>
                 <div class="matriz-search">
-                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye el documento origen y sus documentos relacionados)..." oninput="renderAll()">
+                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar nomenclatura o nombre (incluye padre e hijos)..." oninput="renderAll()">
                     <button class="search-clear" onclick="document.getElementById('searchInput').value=''; renderAll();" title="Limpiar búsqueda"><i class="fas fa-trash-alt"></i></button>
                 </div>
                 <div class="filtros-generales" id="filtrosGenerales">
@@ -3259,7 +3259,7 @@
                     <label>Hipervínculo / Documento <span style="color:var(--red);">*</span></label>
                     <div class="hiper-field-wrap">
                         <div class="hiper-row">
-                            <input type="text" id="mHipervinculo" placeholder="Ingrese URL o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
+                            <input type="text" id="mHipervinculo" placeholder="https://… o suba un archivo" class="required-field" oninput="validateField(this); updateHiperStatusFromInput();">
                             <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('mHiperFile').click()" title="Subir documento"><i class="fas fa-upload"></i> Subir</button>
                             <button type="button" class="btn btn-sm" onclick="openHiperLink()" title="Abrir enlace"><i class="fas fa-external-link-alt"></i></button>
                             <button type="button" class="btn btn-sm" onclick="clearHiperLink()" title="Limpiar"><i class="fas fa-times"></i></button>
@@ -3327,7 +3327,7 @@
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     <div>
                         <label style="font-size:10px;">Contraseña acceso General <span style="color:var(--red);">*</span></label>
-                        <input type="text" id="colvisGeneralPassword" maxlength="60" placeholder="Ingrese contraseña nueva" autocomplete="off" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:11px;">
+                        <input type="text" id="colvisGeneralPassword" maxlength="60" placeholder="Cambiar invalida la anterior" autocomplete="off" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:11px;">
                     </div>
                     <div>
                         <label style="font-size:10px;">Tiempo de acceso (desde guardar)</label>
@@ -3439,11 +3439,11 @@
             <div class="form-grid-modal" style="grid-template-columns:1fr;">
                 <div>
                     <label>Nombre de la solicitud <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="shareName" placeholder="Ingrese ID de la Solicitud" maxlength="80">
+                    <input type="text" id="shareName" placeholder="Ej. Revisión auditoría Q3" maxlength="80">
                 </div>
                 <div>
                     <label>Contraseña de acceso <span style="color:var(--red);">*</span></label>
-                    <input type="text" id="sharePassword" placeholder="Ingrese Contraseña de la Solicitud" maxlength="60" autocomplete="off">
+                    <input type="text" id="sharePassword" placeholder="Contraseña para esta solicitud" maxlength="60" autocomplete="off">
                 </div>
                 <div>
                     <label>Tiempo de expiración <span style="color:var(--red);">*</span></label>
@@ -9088,18 +9088,27 @@ function getFilteredData() {
                     const expected = ['Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área',
                         'Departamento', 'Tipo de Documento', 'Categoría', 'Clasificación', 'Versión',
                         'Fecha de Emisión (1a versión)', 'Fecha de última Actualización', 'Fecha de Autorización',
-                        'Fecha de difusión', 'Hipervínculo', 'Comentarios', 'Estado'
+                        'Fecha de difusión', 'Hipervínculo', 'Comentarios', 'Documento Padre', 'Estado'
                     ];
                     const map = {};
                     headers.forEach((h, i) => { const clean = h.trim().toLowerCase();
                         expected.forEach((eh, idx) => { if (clean === eh.toLowerCase()) map[idx] = i; }); });
-                    const required = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16];
+                    // Estado obligatorio; Documento Padre opcional (plantillas antiguas sin esa columna)
+                    const required = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
                     for (let idx of required) {
                         if (map[idx] === undefined) {
-                            showToast(`No se encontró columna: "${expected[idx]}"`, 'warning');
+                            showToast('No se encontró columna: "' + expected[idx] + '"', 'warning');
                             return;
                         }
                     }
+                    // Estado: índice 17 (nueva plantilla) o 16 (plantilla anterior sin Documento Padre)
+                    if (map[17] === undefined && map[16] === undefined) {
+                        showToast('No se encontró columna: "Estado"', 'warning');
+                        return;
+                    }
+                    const hasPadreCol = map[16] !== undefined && map[17] !== undefined;
+                    const statusIdx = hasPadreCol ? 17 : 16;
+                    const padreIdx = hasPadreCol ? 16 : null;
                     // Duplicados por nomenclatura NORMALIZADA
                     const existingNorm = new Set(
                         data.documents.map(d => normalizarNomenclatura(d.nomenclatura)).filter(Boolean)
@@ -9109,7 +9118,7 @@ function getFilteredData() {
                     let duplicates = [];
                     for (let i = 1; i < lines.length; i++) {
                         const vals = parseCSVLine(lines[i]);
-                        while (vals.length < 17) vals.push('');
+                        while (vals.length < 18) vals.push('');
                         const nom = vals[map[1]] || 'DOC-';
                         const nomNorm = normalizarNomenclatura(nom);
                         if (existingNorm.has(nomNorm) || batchNorm.has(nomNorm)) { duplicates.push(
@@ -9134,7 +9143,8 @@ function getFilteredData() {
                             fechaDifusion: vals[map[13]] || '',
                             hipervinculo: vals[map[14]] || '',
                             comentarios: vals[map[15]] || '',
-                            status: vals[map[16]] || 'Nuevo'
+                            documentoPadre: padreIdx !== null ? String(vals[map[padreIdx]] || '').trim() : '',
+                            status: vals[map[statusIdx]] || 'Nuevo'
                         };
                         batchData.push(doc);
                     }
@@ -9425,10 +9435,10 @@ function getFilteredData() {
             const headers = ['Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área', 'Departamento',
                 'Tipo de Documento', 'Categoría', 'Clasificación', 'Versión', 'Fecha de Emisión (1a versión)',
                 'Fecha de última Actualización', 'Fecha de Autorización', 'Fecha de difusión', 'Hipervínculo',
-                'Comentarios', 'Estado'
+                'Comentarios', 'Documento Padre', 'Estado'
             ];
             let csv = '\uFEFF' + headers.join(',') + '\n';
-            // 17 columnas alineadas con los encabezados (faltaba Macroproceso en el ejemplo anterior)
+            // 18 columnas (incluye Documento Padre = nomenclatura del padre, opcional)
             const example = [
                 'COMA',
                 'CM-PLG-CONTCI-01',
@@ -9446,6 +9456,7 @@ function getFilteredData() {
                 '01/01/2024',
                 'https://sites.google.com/trabajo.gob.pe/intranet/pol%C3%ADticas/control-interno/qu%C3%A9-es-el-control-interno?pli=1&authuser=0',
                 'Documento de nueva creación',
+                '',
                 'Nuevo'
             ];
             csv += example.map(escapeCSVField).join(',') + '\n';
