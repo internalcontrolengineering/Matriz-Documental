@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>📋 Matriz de Documentación Normativa Interna — Inventario del Sistema de Control Interno Normativo</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3050,11 +3050,208 @@
           color: #0f172a;
           border-color: rgba(147,197,253,0.4);
         }
+        /* ===== Solo móvil — PC / laptop sin cambios ===== */
         @media (max-width: 640px) {
-          .header-left { padding-right: 90px; }
-          .header-actions { top: 10px; right: 12px; }
-          .marquee-bar { width: min(280px, 100%); height: 24px; }
-          .marquee-item { font-size: 0.55rem; padding: 0 10px; }
+          .header {
+            flex-wrap: wrap;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 6px;
+            padding: 10px 12px;
+          }
+          .header-left {
+            padding-right: 0;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            gap: 8px;
+          }
+          .header-title-group {
+            min-width: 0;
+            overflow: hidden;
+            flex: 1;
+          }
+          .header-title-group h1 {
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+          }
+          .header-subtitle {
+            font-size: 0.55rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            display: block;
+          }
+          .header-logo {
+            height: 36px;
+            width: auto;
+            flex-shrink: 0;
+          }
+          /* Perfil + menú debajo del marquee, alineados con título/subtítulo */
+          .header-actions {
+            position: static !important;
+            top: auto !important;
+            right: auto !important;
+            width: 100%;
+            justify-content: flex-start;
+            gap: 6px;
+            margin: 0;
+            /* Alinea con la columna del título (logo 36px + gap 8px) */
+            padding-left: calc(36px + 8px);
+            box-sizing: border-box;
+          }
+          .user-badge-header {
+            font-size: 9px;
+            padding: 3px 8px;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .marquee-bar {
+            width: min(280px, 100%);
+            height: 22px;
+            margin-top: 4px;
+          }
+          .marquee-item { font-size: 0.52rem; padding: 0 8px; }
+          .app-container {
+            padding-bottom: 48px;
+          }
+          .table-container {
+            max-height: min(50vh, 420px);
+          }
+          html, body {
+            overflow-x: hidden;
+          }
+          body {
+            min-height: 100dvh;
+            padding-left: max(10px, env(safe-area-inset-left));
+            padding-right: max(10px, env(safe-area-inset-right));
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+          }
+          .ui-overlay {
+            padding: max(12px, env(safe-area-inset-top, 12px)) max(12px, env(safe-area-inset-right, 12px)) max(12px, env(safe-area-inset-bottom, 12px)) max(12px, env(safe-area-inset-left, 12px));
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+          }
+          .ui-dialog {
+            max-width: 100%;
+            width: 100%;
+            max-height: min(88vh, 88dvh);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 14px 14px;
+            border-radius: 14px;
+            box-sizing: border-box;
+            margin: auto;
+          }
+          .ui-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.05rem;
+            margin-bottom: 10px;
+          }
+          .ui-dialog h3 {
+            font-size: 14px;
+            word-break: break-word;
+          }
+          .ui-dialog p {
+            font-size: 11px;
+            margin-bottom: 12px;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+          }
+          .ui-actions {
+            flex-wrap: wrap;
+            gap: 6px;
+          }
+          .ui-actions .btn {
+            min-width: 0;
+            flex: 1 1 0;
+            max-width: none;
+            padding: 9px 10px;
+            font-size: 11px;
+          }
+          .ui-dialog input[type="text"],
+          .ui-dialog input[type="password"] {
+            font-size: 16px !important;
+            box-sizing: border-box;
+            max-width: 100%;
+          }
+          .modal-overlay {
+            padding: max(10px, env(safe-area-inset-top, 10px)) max(10px, env(safe-area-inset-right, 10px)) max(10px, env(safe-area-inset-bottom, 10px)) max(10px, env(safe-area-inset-left, 10px));
+            box-sizing: border-box;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          .modal {
+            max-height: min(90vh, 90dvh);
+            overflow-x: hidden;
+            box-sizing: border-box;
+            margin: auto;
+          }
+          .password-modal {
+            padding: max(16px, env(safe-area-inset-top, 16px)) max(16px, env(safe-area-inset-right, 16px)) max(16px, env(safe-area-inset-bottom, 16px)) max(16px, env(safe-area-inset-left, 16px));
+            box-sizing: border-box;
+            overflow-y: auto;
+          }
+          .password-modal-content {
+            max-width: 100%;
+            padding: 18px 14px;
+            box-sizing: border-box;
+          }
+          .password-modal-content input {
+            font-size: 16px;
+            box-sizing: border-box;
+          }
+          .password-modal-buttons {
+            flex-wrap: wrap;
+          }
+          .password-modal-buttons button {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: none;
+          }
+          #toastContainer {
+            top: max(10px, env(safe-area-inset-top, 10px));
+            right: max(10px, env(safe-area-inset-right, 10px));
+            left: max(10px, env(safe-area-inset-left, 10px));
+            max-width: none;
+          }
+          .session-timer {
+            bottom: max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+            left: max(10px, env(safe-area-inset-left, 10px));
+            right: auto;
+            z-index: 5500;
+            padding: 5px 9px;
+            font-size: 0.62rem;
+            gap: 4px;
+          }
+        }
+        @media (max-width: 400px) {
+          .header-title-group h1 {
+            font-size: 0.85rem;
+          }
+          .header-logo {
+            height: 32px;
+          }
+          .header-actions {
+            padding-left: calc(32px + 8px);
+          }
+          .marquee-bar {
+            width: min(200px, 100%);
+          }
+          .ui-dialog {
+            padding: 14px 12px 12px;
+          }
+          .ui-actions .btn {
+            font-size: 10px;
+            padding: 8px;
+          }
         }
     </style>
 </head>
