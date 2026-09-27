@@ -1964,6 +1964,7 @@
             position: relative;
             display: inline-flex;
             align-items: center;
+            z-index: 40;
         }
         .header-menu-btn {
             padding: 5px 10px;
@@ -1993,10 +1994,15 @@
             border: 1px solid var(--border-color);
             border-radius: 10px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            z-index: 2000;
+            z-index: 6000;
             padding: 6px;
             flex-direction: column;
             gap: 2px;
+            max-height: min(70vh, 380px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
         .header-menu-dropdown.open {
             display: flex;
@@ -2007,11 +2013,13 @@
             border-radius: 8px;
             padding: 8px 12px;
             font-size: 11px;
+            flex-shrink: 0;
         }
         .header-menu-dropdown .menu-divider {
             height: 1px;
             background: var(--border-color);
             margin: 4px 0;
+            flex-shrink: 0;
         }
         /* Gear / campos obligatorios */
         .req-field-item {
@@ -2049,8 +2057,6 @@
         }
         @media (max-width: 640px) {
             .header-menu-dropdown {
-                right: 0;
-                left: auto;
                 min-width: 160px;
             }
             .header-actions {
@@ -3058,6 +3064,8 @@
             align-items: stretch;
             gap: 6px;
             padding: 10px 12px;
+            z-index: 200;
+            overflow: visible;
           }
           .header-left {
             padding-right: 0;
@@ -3065,6 +3073,7 @@
             max-width: 100%;
             min-width: 0;
             gap: 8px;
+            overflow: visible;
           }
           .header-title-group {
             min-width: 0;
@@ -3103,6 +3112,17 @@
             /* Alinea con la columna del título (logo 36px + gap 8px) */
             padding-left: calc(36px + 8px);
             box-sizing: border-box;
+            z-index: 201;
+            overflow: visible;
+          }
+          .header-menu-wrap {
+            z-index: 6001;
+          }
+          .header-menu-dropdown {
+            left: 0;
+            right: auto;
+            z-index: 6002;
+            max-height: min(55vh, 340px);
           }
           .user-badge-header {
             font-size: 9px;
