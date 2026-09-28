@@ -9995,6 +9995,8 @@ function getFilteredData() {
             if (!isManager) return;
             const f = getFilteredData();
             if (f.length === 0) { showToast('No hay documentos para exportar', 'warning'); return; }
+            // Mismo orden e ID correlativo que la tabla filtrada (1, 2, 3…)
+            f.sort((a, b) => a.id - b.id);
 
             const headers = ['ID', 'Unidad de Negocio', 'Nomenclatura', 'Nombre', 'Macroproceso', 'Área', 'Departamento',
                 'Tipo de Documento', 'Categoría', 'Clasificación', 'Versión', 'Fecha de Emisión (1a versión)',
@@ -10002,9 +10004,10 @@ function getFilteredData() {
                 'Comentarios', 'Documento Padre', 'Estado'
             ];
             let csv = '\uFEFF' + headers.join(',') + '\n';
-            f.forEach(d => {
+            f.forEach((d, index) => {
+                const visualId = index + 1;
                 const padreInfo = resolveDocumentoPadreInfo(d.documentoPadre);
-                const row = [d.id, escapeCSVField(d.unidad || ''), escapeCSVField(d.nomenclatura || ''),
+                const row = [visualId, escapeCSVField(d.unidad || ''), escapeCSVField(d.nomenclatura || ''),
                     escapeCSVField(d.nombre || ''), escapeCSVField(d.macro || ''), escapeCSVField(d.area || ''),
                     escapeCSVField(d.departamento || ''), escapeCSVField(d.tipo || ''),
                     escapeCSVField(d.categoria || ''), escapeCSVField(d.clasificacion || ''), d.version || '',
